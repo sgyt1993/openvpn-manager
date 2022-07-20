@@ -30,6 +30,10 @@ services:
       EASYRSA_PATH: "/mnt/easyrsa"
       OVPN_SERVER: "127.0.0.1:7777:tcp"
       OVPN_INDEX_PATH: "/mnt/easyrsa/pki/index.txt"
+      OVPN_CCD: "True"
+      OVPN_CCD_PATH: "/mnt/ccd"
+      OVPN_AUTH: "true"
+      OVPN_AUTH_DB_PATH: "/mnt/easyrsa/pki/users.db"
     network_mode: service:openvpn
     volumes:
       - ./easyrsa_master:/mnt/easyrsa

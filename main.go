@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"ovpn-admin/filter"
+	"ovpn-admin/login"
 	"regexp"
 	"strconv"
 	"strings"
@@ -44,33 +46,33 @@ const (
 )
 
 var (
-	listenHost      				 = kingpin.Flag("listen.host","host for ovpn-admin").Default("0.0.0.0").Envar("OVPN_LISTEN_HOST").String()
-	listenPort      				 = kingpin.Flag("listen.port","port for ovpn-admin").Default("8080").Envar("OVPN_LISTEN_PORT").String()
-	serverRole               = kingpin.Flag("role","server role, master or slave").Default("master").Envar("OVPN_ROLE").HintOptions("master", "slave").String()
-	masterHost               = kingpin.Flag("master.host","URL for the master server").Default("http://127.0.0.1").Envar("OVPN_MASTER_HOST").String()
-	masterBasicAuthUser			 = kingpin.Flag("master.basic-auth.user","user for master server's Basic Auth").Default("").Envar("OVPN_MASTER_USER").String()
-	masterBasicAuthPassword  = kingpin.Flag("master.basic-auth.password","password for master server's Basic Auth").Default("").Envar("OVPN_MASTER_PASSWORD").String()
+	listenHost               = kingpin.Flag("listen.host", "host for ovpn-admin").Default("0.0.0.0").Envar("OVPN_LISTEN_HOST").String()
+	listenPort               = kingpin.Flag("listen.port", "port for ovpn-admin").Default("8080").Envar("OVPN_LISTEN_PORT").String()
+	serverRole               = kingpin.Flag("role", "server role, master or slave").Default("master").Envar("OVPN_ROLE").HintOptions("master", "slave").String()
+	masterHost               = kingpin.Flag("master.host", "URL for the master server").Default("http://127.0.0.1").Envar("OVPN_MASTER_HOST").String()
+	masterBasicAuthUser      = kingpin.Flag("master.basic-auth.user", "user for master server's Basic Auth").Default("").Envar("OVPN_MASTER_USER").String()
+	masterBasicAuthPassword  = kingpin.Flag("master.basic-auth.password", "password for master server's Basic Auth").Default("").Envar("OVPN_MASTER_PASSWORD").String()
 	masterSyncFrequency      = kingpin.Flag("master.sync-frequency", "master host data sync frequency in seconds").Default("600").Envar("OVPN_MASTER_SYNC_FREQUENCY").Int()
 	masterSyncToken          = kingpin.Flag("master.sync-token", "master host data sync security token").Default("VerySecureToken").Envar("OVPN_MASTER_TOKEN").PlaceHolder("TOKEN").String()
-	openvpnNetwork           = kingpin.Flag("ovpn.network","NETWORK/MASK_PREFIX for OpenVPN server").Default("172.16.100.0/24").Envar("OVPN_NETWORK").String()
-	openvpnServer      			 = kingpin.Flag("ovpn.server","HOST:PORT:PROTOCOL for OpenVPN server; can have multiple values").Default("127.0.0.1:7777:tcp").Envar("OVPN_SERVER").PlaceHolder("HOST:PORT:PROTOCOL").Strings()
-	openvpnServerBehindLB 	 = kingpin.Flag("ovpn.server.behindLB","enable if your OpenVPN server is behind Kubernetes Service having the LoadBalancer type").Default("false").Envar("OVPN_LB").Bool()
-	openvpnServiceName 			 = kingpin.Flag("ovpn.service","the name of Kubernetes Service having the LoadBalancer type if your OpenVPN server is behind it").Default("openvpn-external").Envar("OVPN_LB_SERVICE").String()
-	mgmtAddress		    			 = kingpin.Flag("mgmt","ALIAS=HOST:PORT for OpenVPN server mgmt interface; can have multiple values").Default("main=127.0.0.1:8989").Envar("OVPN_MGMT").Strings()
-	metricsPath 						 = kingpin.Flag("metrics.path",  "URL path for exposing collected metrics").Default("/metrics").Envar("OVPN_METRICS_PATH").String()
-	easyrsaDirPath     			 = kingpin.Flag("easyrsa.path", "path to easyrsa dir").Default("./easyrsa/").Envar("EASYRSA_PATH").String()
-	indexTxtPath    				 = kingpin.Flag("easyrsa.index-path", "path to easyrsa index file").Default("./easyrsa/pki/index.txt").Envar("OVPN_INDEX_PATH").String()
-	ccdEnabled  						 = kingpin.Flag("ccd", "enable client-config-dir").Default("false").Envar("OVPN_CCD").Bool()
-	ccdDir          				 = kingpin.Flag("ccd.path", "path to client-config-dir").Default("./ccd").Envar("OVPN_CCD_PATH").String()
+	openvpnNetwork           = kingpin.Flag("ovpn.network", "NETWORK/MASK_PREFIX for OpenVPN server").Default("172.16.100.0/24").Envar("OVPN_NETWORK").String()
+	openvpnServer            = kingpin.Flag("ovpn.server", "HOST:PORT:PROTOCOL for OpenVPN server; can have multiple values").Default("127.0.0.1:7777:tcp").Envar("OVPN_SERVER").PlaceHolder("HOST:PORT:PROTOCOL").Strings()
+	openvpnServerBehindLB    = kingpin.Flag("ovpn.server.behindLB", "enable if your OpenVPN server is behind Kubernetes Service having the LoadBalancer type").Default("false").Envar("OVPN_LB").Bool()
+	openvpnServiceName       = kingpin.Flag("ovpn.service", "the name of Kubernetes Service having the LoadBalancer type if your OpenVPN server is behind it").Default("openvpn-external").Envar("OVPN_LB_SERVICE").String()
+	mgmtAddress              = kingpin.Flag("mgmt", "ALIAS=HOST:PORT for OpenVPN server mgmt interface; can have multiple values").Default("main=127.0.0.1:8989").Envar("OVPN_MGMT").Strings()
+	metricsPath              = kingpin.Flag("metrics.path", "URL path for exposing collected metrics").Default("/metrics").Envar("OVPN_METRICS_PATH").String()
+	easyrsaDirPath           = kingpin.Flag("easyrsa.path", "path to easyrsa dir").Default("./easyrsa/").Envar("EASYRSA_PATH").String()
+	indexTxtPath             = kingpin.Flag("easyrsa.index-path", "path to easyrsa index file").Default("./easyrsa/pki/index.txt").Envar("OVPN_INDEX_PATH").String()
+	ccdEnabled               = kingpin.Flag("ccd", "enable client-config-dir").Default("false").Envar("OVPN_CCD").Bool()
+	ccdDir                   = kingpin.Flag("ccd.path", "path to client-config-dir").Default("./ccd").Envar("OVPN_CCD_PATH").String()
 	clientConfigTemplatePath = kingpin.Flag("templates.clientconfig-path", "path to custom client.conf.tpl").Default("").Envar("OVPN_TEMPLATES_CC_PATH").String()
 	ccdTemplatePath          = kingpin.Flag("templates.ccd-path", "path to custom ccd.tpl").Default("").Envar("OVPN_TEMPLATES_CCD_PATH").String()
-	authByPassword 					 = kingpin.Flag("auth.password", "enable additional password authentication").Default("false").Envar("OVPN_AUTH").Bool()
-	authDatabase 						 = kingpin.Flag("auth.db", "database path for password authentication").Default("./easyrsa/pki/users.db").Envar("OVPN_AUTH_DB_PATH").String()
-	debug           				 = kingpin.Flag("debug", "enable debug mode").Default("false").Envar("OVPN_DEBUG").Bool()
-	verbose           			 = kingpin.Flag("verbose", "enable verbose mode").Default("false").Envar("OVPN_VERBOSE").Bool()
+	authByPassword           = kingpin.Flag("auth.password", "enable additional password authentication").Default("false").Envar("OVPN_AUTH").Bool()
+	authDatabase             = kingpin.Flag("auth.db", "database path for password authentication").Default("./easyrsa/pki/users.db").Envar("OVPN_AUTH_DB_PATH").String()
+	debug                    = kingpin.Flag("debug", "enable debug mode").Default("false").Envar("OVPN_DEBUG").Bool()
+	verbose                  = kingpin.Flag("verbose", "enable verbose mode").Default("false").Envar("OVPN_VERBOSE").Bool()
 
-	certsArchivePath         = "/tmp/" + certsArchiveFileName
-	ccdArchivePath           = "/tmp/" + ccdArchiveFileName
+	certsArchivePath = "/tmp/" + certsArchiveFileName
+	ccdArchivePath   = "/tmp/" + ccdArchiveFileName
 
 	version = "1.7.5"
 )
@@ -178,14 +180,12 @@ type openvpnClientConfig struct {
 }
 
 type OpenvpnClient struct {
-
-	Identity            string      `json:"Identity"`
-	AccountStatus       string      `json:"AccountStatus"`
-	ExpirationDate      string      `json:"ExpirationDate"`
-	RevocationDate      string      `json:"RevocationDate"`
-	ConnectionStatus    string      `json:"ConnectionStatus"`
-	ConnectionServer 	string      `json:"ConnectionServer"`
-
+	Identity         string `json:"Identity"`
+	AccountStatus    string `json:"AccountStatus"`
+	ExpirationDate   string `json:"ExpirationDate"`
+	RevocationDate   string `json:"RevocationDate"`
+	ConnectionStatus string `json:"ConnectionStatus"`
+	ConnectionServer string `json:"ConnectionServer"`
 }
 
 type ccdRoute struct {
@@ -443,23 +443,40 @@ func main() {
 	staticBox := packr.New("static", "./frontend/static")
 	static := CacheControlWrapper(http.FileServer(staticBox))
 
-	http.Handle("/", static)
-	http.HandleFunc("/api/server/settings", ovpnAdmin.serverSettingsHandler)
-	http.HandleFunc("/api/users/list", ovpnAdmin.userListHandler)
-	http.HandleFunc("/api/user/create", ovpnAdmin.userCreateHandler)
-	http.HandleFunc("/api/user/change-password", ovpnAdmin.userChangePasswordHandler)
-	http.HandleFunc("/api/user/revoke", ovpnAdmin.userRevokeHandler)
-	http.HandleFunc("/api/user/unrevoke", ovpnAdmin.userUnrevokeHandler)
-	http.HandleFunc("/api/user/config/show", ovpnAdmin.userShowConfigHandler)
-	http.HandleFunc("/api/user/disconnect", ovpnAdmin.userDisconnectHandler)
-	http.HandleFunc("/api/user/statistic", ovpnAdmin.userStatisticHandler)
-	http.HandleFunc("/api/user/ccd", ovpnAdmin.userShowCcdHandler)
-	http.HandleFunc("/api/user/ccd/apply", ovpnAdmin.userApplyCcdHandler)
+	filter := filter.New()
+	filter.RegisterFilterUri("/api/server/settings", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/users/list", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/create", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/change-password", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/revoke", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/unrevoke", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/config/show", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/disconnect", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/ccd", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/user/ccd/apply", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/sync/last/try", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/sync/last/successful", login.JudgeLogin)
+	filter.RegisterFilterUri(downloadCertsApiUrl, login.JudgeLogin)
+	filter.RegisterFilterUri(downloadCcdApiUrl, login.JudgeLogin)
 
-	http.HandleFunc("/api/sync/last/try", ovpnAdmin.lastSyncTimeHandler)
-	http.HandleFunc("/api/sync/last/successful", ovpnAdmin.lastSuccessfulSyncTimeHandler)
-	http.HandleFunc(downloadCertsApiUrl, ovpnAdmin.downloadCertsHandler)
-	http.HandleFunc(downloadCcdApiUrl, ovpnAdmin.downloadCcdHandler)
+	http.Handle("/", static)
+	http.HandleFunc("/api/login", login.AccountLogin)
+	http.HandleFunc("/api/server/settings", filter.Handle(ovpnAdmin.serverSettingsHandler))
+	http.HandleFunc("/api/users/list", filter.Handle(ovpnAdmin.userListHandler))
+	http.HandleFunc("/api/user/create", filter.Handle(ovpnAdmin.userCreateHandler))
+	http.HandleFunc("/api/user/change-password", filter.Handle(ovpnAdmin.userChangePasswordHandler))
+	http.HandleFunc("/api/user/revoke", filter.Handle(ovpnAdmin.userRevokeHandler))
+	http.HandleFunc("/api/user/unrevoke", filter.Handle(ovpnAdmin.userUnrevokeHandler))
+	http.HandleFunc("/api/user/config/show", filter.Handle(ovpnAdmin.userShowConfigHandler))
+	http.HandleFunc("/api/user/disconnect", filter.Handle(ovpnAdmin.userDisconnectHandler))
+	http.HandleFunc("/api/user/statistic", filter.Handle(ovpnAdmin.userStatisticHandler))
+	http.HandleFunc("/api/user/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/user/ccd/apply", filter.Handle(ovpnAdmin.userApplyCcdHandler))
+
+	http.HandleFunc("/api/sync/last/try", filter.Handle(ovpnAdmin.lastSyncTimeHandler))
+	http.HandleFunc("/api/sync/last/successful", filter.Handle(ovpnAdmin.lastSuccessfulSyncTimeHandler))
+	http.HandleFunc(downloadCertsApiUrl, filter.Handle(ovpnAdmin.downloadCertsHandler))
+	http.HandleFunc(downloadCcdApiUrl, filter.Handle(ovpnAdmin.downloadCcdHandler))
 
 	http.Handle(*metricsPath, promhttp.HandlerFor(ovpnAdmin.promRegistry, promhttp.HandlerOpts{}))
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
@@ -585,9 +602,9 @@ func (oAdmin *OvpnAdmin) renderClientConfig(username string) string {
 		var tmp bytes.Buffer
 		err := t.Execute(&tmp, conf)
 		if err != nil {
-			log.Printf("ERROR: something goes wrong during rendering config for %s\n", username )
+			log.Printf("ERROR: something goes wrong during rendering config for %s\n", username)
 			if *debug {
-				log.Printf("DEBUG: rendering config for %s failed with error %v\n", username, err )
+				log.Printf("DEBUG: rendering config for %s failed with error %v\n", username, err)
 			}
 		}
 
@@ -662,56 +679,56 @@ func (oAdmin *OvpnAdmin) modifyCcd(ccd Ccd) (bool, string) {
 
 func validateCcd(ccd Ccd) (bool, string) {
 
-    ccdErr := ""
+	ccdErr := ""
 
-    if ccd.ClientAddress != "dynamic" {
-        _, ovpnNet, err := net.ParseCIDR(*openvpnNetwork)
-        if err != nil {
-		    log.Println(err)
-	    }
+	if ccd.ClientAddress != "dynamic" {
+		_, ovpnNet, err := net.ParseCIDR(*openvpnNetwork)
+		if err != nil {
+			log.Println(err)
+		}
 
-	    if ! checkStaticAddressIsFree(ccd.ClientAddress, ccd.User) {
-            ccdErr = fmt.Sprintf("ClientAddress \"%s\" already assigned to another user", ccd.ClientAddress)
-            if *debug {
-                log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
-            }
-            return false, ccdErr
-	    }
+		if !checkStaticAddressIsFree(ccd.ClientAddress, ccd.User) {
+			ccdErr = fmt.Sprintf("ClientAddress \"%s\" already assigned to another user", ccd.ClientAddress)
+			if *debug {
+				log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
+			}
+			return false, ccdErr
+		}
 
-        if net.ParseIP(ccd.ClientAddress) == nil {
-            ccdErr = fmt.Sprintf("ClientAddress \"%s\" not a valid IP address", ccd.ClientAddress)
-            if *debug {
-                log.Printf("ERROR: Modify ccd for user %s: %s\n",  ccd.User, ccdErr)
-            }
-            return false, ccdErr
-        }
+		if net.ParseIP(ccd.ClientAddress) == nil {
+			ccdErr = fmt.Sprintf("ClientAddress \"%s\" not a valid IP address", ccd.ClientAddress)
+			if *debug {
+				log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
+			}
+			return false, ccdErr
+		}
 
-        if ! ovpnNet.Contains(net.ParseIP(ccd.ClientAddress)) {
-            ccdErr = fmt.Sprintf("ClientAddress \"%s\" not belongs to openvpn server network", ccd.ClientAddress)
-            if *debug {
-                log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
-            }
-            return false, ccdErr
-        }
-    }
+		if !ovpnNet.Contains(net.ParseIP(ccd.ClientAddress)) {
+			ccdErr = fmt.Sprintf("ClientAddress \"%s\" not belongs to openvpn server network", ccd.ClientAddress)
+			if *debug {
+				log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
+			}
+			return false, ccdErr
+		}
+	}
 
-    for _, route := range ccd.CustomRoutes {
-        if net.ParseIP(route.Address) == nil {
-            ccdErr = fmt.Sprintf("CustomRoute.Address \"%s\" must be a valid IP address", route.Address)
-            if *debug {
-                log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
-            }
-            return false, ccdErr
-        }
+	for _, route := range ccd.CustomRoutes {
+		if net.ParseIP(route.Address) == nil {
+			ccdErr = fmt.Sprintf("CustomRoute.Address \"%s\" must be a valid IP address", route.Address)
+			if *debug {
+				log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
+			}
+			return false, ccdErr
+		}
 
-        if net.ParseIP(route.Mask) == nil {
-            ccdErr = fmt.Sprintf("CustomRoute.Mask \"%s\" must be a valid IP address", route.Mask)
-            if *debug {
-                log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
-            }
-            return false, ccdErr
-        }
-    }
+		if net.ParseIP(route.Mask) == nil {
+			ccdErr = fmt.Sprintf("CustomRoute.Mask \"%s\" must be a valid IP address", route.Mask)
+			if *debug {
+				log.Printf("ERROR: Modify ccd for user %s: %s\n", ccd.User, ccdErr)
+			}
+			return false, ccdErr
+		}
+	}
 
 	return true, ccdErr
 }
@@ -1162,7 +1179,6 @@ func (oAdmin *OvpnAdmin) syncWithMaster() {
 	}
 }
 
-
 func getOvpnServerHostsFromKubeApi() []OpenvpnServer {
 	var hosts []OpenvpnServer
 	var lbHost string
@@ -1194,7 +1210,7 @@ func getOvpnServerHostsFromKubeApi() []OpenvpnServer {
 	if service.Status.LoadBalancer.Ingress[0].IP != "" {
 		lbHost = service.Status.LoadBalancer.Ingress[0].IP
 	}
-	hosts = append(hosts, OpenvpnServer{lbHost,strconv.Itoa(int(service.Spec.Ports[0].Port)),strings.ToLower(string(service.Spec.Ports[0].Protocol))})
+	hosts = append(hosts, OpenvpnServer{lbHost, strconv.Itoa(int(service.Spec.Ports[0].Port)), strings.ToLower(string(service.Spec.Ports[0].Protocol))})
 
 	return hosts
 }
