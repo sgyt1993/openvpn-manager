@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"ovpn-admin/commonresp"
 	"ovpn-admin/filter"
 	"ovpn-admin/login"
 	"regexp"
@@ -224,8 +225,9 @@ type clientStatus struct {
 }
 
 func (oAdmin *OvpnAdmin) userListHandler(w http.ResponseWriter, r *http.Request) {
-	usersList, _ := json.Marshal(oAdmin.clients)
-	fmt.Fprintf(w, "%s", usersList)
+	//usersList, _ := json.Marshal(oAdmin.clients)
+	commonresp.JsonRespOK(w, oAdmin.clients)
+	//fmt.Fprintf(w, "%s", usersList)
 }
 
 func (oAdmin *OvpnAdmin) userStatisticHandler(w http.ResponseWriter, r *http.Request) {
@@ -302,8 +304,9 @@ func (oAdmin *OvpnAdmin) userDisconnectHandler(w http.ResponseWriter, r *http.Re
 
 func (oAdmin *OvpnAdmin) userShowCcdHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	ccd, _ := json.Marshal(oAdmin.getCcd(r.FormValue("username")))
-	fmt.Fprintf(w, "%s", ccd)
+	//ccd, _ := json.Marshal(oAdmin.getCcd(r.FormValue("username")))
+	//fmt.Fprintf(w, "%s", ccd)
+	commonresp.JsonRespOK(w, oAdmin.getCcd(r.FormValue("username")))
 }
 
 func (oAdmin *OvpnAdmin) userApplyCcdHandler(w http.ResponseWriter, r *http.Request) {
@@ -472,6 +475,12 @@ func main() {
 	http.HandleFunc("/api/user/statistic", filter.Handle(ovpnAdmin.userStatisticHandler))
 	http.HandleFunc("/api/user/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
 	http.HandleFunc("/api/user/ccd/apply", filter.Handle(ovpnAdmin.userApplyCcdHandler))
+
+	http.HandleFunc("/api/role/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/role/ccd/apply", filter.Handle(ovpnAdmin.userApplyCcdHandler))
+	http.HandleFunc("/api/user/addrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/user/delrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/user/queryrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
 
 	http.HandleFunc("/api/sync/last/try", filter.Handle(ovpnAdmin.lastSyncTimeHandler))
 	http.HandleFunc("/api/sync/last/successful", filter.Handle(ovpnAdmin.lastSuccessfulSyncTimeHandler))

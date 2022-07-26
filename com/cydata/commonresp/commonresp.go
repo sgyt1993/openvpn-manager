@@ -6,8 +6,8 @@ import (
 )
 
 type JsonResult struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
+	Code int         `json:"code"`
+	Msg  interface{} `json:"msg"`
 }
 
 const (
@@ -22,14 +22,14 @@ func CommonOK() JsonResult {
 	}
 }
 
-func OK(msg string) JsonResult {
+func OK(msg interface{}) JsonResult {
 	return JsonResult{
 		Code: okCode,
 		Msg:  msg,
 	}
 }
 
-func Failed(msg string) JsonResult {
+func Failed(msg interface{}) JsonResult {
 	return JsonResult{
 		Code: failedCode,
 		Msg:  msg,
@@ -50,8 +50,7 @@ func JsonRespOK(w http.ResponseWriter, data interface{}) {
 		jsonResp, _ := json.Marshal(resp)
 		w.Write(jsonResp)
 	} else {
-		msg, _ := json.Marshal(data)
-		resp := OK(string(msg))
+		resp := OK(data)
 		jsonResp, _ := json.Marshal(resp)
 		w.Write(jsonResp)
 	}
