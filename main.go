@@ -10,9 +10,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"ovpn-admin/commonresp"
+	"ovpn-admin/com/cydata/commonresp"
+	"ovpn-admin/com/cydata/db"
+	"ovpn-admin/com/cydata/login"
+	"ovpn-admin/com/cydata/role"
 	"ovpn-admin/filter"
-	"ovpn-admin/login"
 	"regexp"
 	"strconv"
 	"strings"
@@ -441,6 +443,9 @@ func main() {
 		log.Println("Runnnig in verbose mode")
 	}
 
+	//初始化数据
+	db.InitDb()
+
 	ovpnAdmin.templates = packr.New("template", "./templates")
 
 	staticBox := packr.New("static", "./frontend/static")
@@ -459,6 +464,11 @@ func main() {
 	filter.RegisterFilterUri("/api/user/ccd/apply", login.JudgeLogin)
 	filter.RegisterFilterUri("/api/sync/last/try", login.JudgeLogin)
 	filter.RegisterFilterUri("/api/sync/last/successful", login.JudgeLogin)
+
+	filter.RegisterFilterUri("/api/role/add", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/role/update", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/role/del", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/role/query", login.JudgeLogin)
 	filter.RegisterFilterUri(downloadCertsApiUrl, login.JudgeLogin)
 	filter.RegisterFilterUri(downloadCcdApiUrl, login.JudgeLogin)
 
@@ -478,9 +488,15 @@ func main() {
 
 	http.HandleFunc("/api/role/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
 	http.HandleFunc("/api/role/ccd/apply", filter.Handle(ovpnAdmin.userApplyCcdHandler))
-	http.HandleFunc("/api/user/addrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/user/delrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/user/queryrole", filter.Handle(ovpnAdmin.userShowCcdHandler))
+
+	http.HandleFunc("/api/role/add", filter.Handle(role.Add))
+	http.HandleFunc("/api/role/update", filter.Handle(role.Update))
+	http.HandleFunc("/api/role/del", filter.Handle(role.Del))
+	http.HandleFunc("/api/role/query", filter.Handle(role.Query))
+
+	http.HandleFunc("/api/userRole/add", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/userRole/del", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/userRole/query", filter.Handle(ovpnAdmin.userShowCcdHandler))
 
 	http.HandleFunc("/api/sync/last/try", filter.Handle(ovpnAdmin.lastSyncTimeHandler))
 	http.HandleFunc("/api/sync/last/successful", filter.Handle(ovpnAdmin.lastSuccessfulSyncTimeHandler))

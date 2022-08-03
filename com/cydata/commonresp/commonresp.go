@@ -63,3 +63,15 @@ func JsonRespFail(w http.ResponseWriter, msg string) {
 	jsonResp, _ := json.Marshal(resp)
 	w.Write(jsonResp)
 }
+
+func JudgeError(w http.ResponseWriter, data interface{}, err error) {
+	if err != nil {
+		if len(err.Error()) == 0 {
+			JsonRespFail(w, "system is error")
+		} else {
+			JsonRespFail(w, err.Error())
+		}
+	} else {
+		JsonRespOK(w, data)
+	}
+}

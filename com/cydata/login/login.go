@@ -5,7 +5,7 @@ import (
 	"github.com/dgrijalva/jwt-go/v4"
 	"golang.org/x/xerrors"
 	"net/http"
-	"ovpn-admin/commonresp"
+	"ovpn-admin/com/cydata/commonresp"
 	"strings"
 	"time"
 )
