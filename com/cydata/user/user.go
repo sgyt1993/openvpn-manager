@@ -1,12 +1,12 @@
-package main
+package user
 
 import (
-	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
+	"ovpn-admin/com/cydata/db"
 	"text/tabwriter"
 )
 
@@ -59,48 +59,6 @@ type User struct {
 	deleted  bool
 }
 
-func main() {
-	kingpin.Version(version)
-	switch kingpin.Parse() {
-	case createCommand.FullCommand():
-		createUser(*createCommandUserFlag, *createCommandPasswordFlag)
-	case deleteCommand.FullCommand():
-		deleteUser(*deleteCommandUserFlag)
-	case revokeCommand.FullCommand():
-		revokedUser(*revokeCommandUserFlag)
-	case restoreCommand.FullCommand():
-		restoreUser(*restoreCommandUserFlag)
-	case listCommand.FullCommand():
-		printUsers()
-	case checkCommand.FullCommand():
-		_ = checkUserExistent(*checkCommandUserFlag)
-	case authCommand.FullCommand():
-		authUser(*authCommandUserFlag, *authCommandPasswordFlag)
-	case changePasswordCommand.FullCommand():
-		changeUserPassword(*changePasswordCommandUserFlag, *changePasswordCommandPasswordFlag)
-	case dbInitCommand.FullCommand():
-		initDb()
-	case dbMigrateCommand.FullCommand():
-		migrateDb()
-	}
-}
-
-func getDb() *sql.DB {
-	db, err := sql.Open("sqlite3", *dbPath)
-	checkErr(err)
-	if db == nil {
-		panic("db is nil")
-	}
-	return db
-}
-
-func initDb() {
-	// boolean fields are integer because of sqlite does not support boolean: 1 = true, 0 = false
-	_, err := getDb().Exec("CREATE TABLE IF NOT EXISTS users(id integer not null primary key autoincrement, username string UNIQUE, password string, revoked integer default 0, deleted integer default 0)")
-	checkErr(err)
-	fmt.Printf("Database initialized at %s\n", *dbPath)
-}
-
 func migrateDb() {
 	fmt.Println("STUB: Migrations are up to date")
 }
@@ -108,7 +66,7 @@ func migrateDb() {
 func createUser(username, password string) {
 	if !checkUserExistent(username) {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-		_, err := getDb().Exec("INSERT INTO users(username, password) VALUES ($1, $2)", username, string(hash))
+		_, err := db.GetDb().Exec("INSERT INTO users(username, password) VALUES ($1, $2)", username, string(hash))
 		checkErr(err)
 		fmt.Printf("User %s created\n", username)
 	} else {
@@ -123,7 +81,7 @@ func deleteUser(username string) {
 	if *deleteCommandUserForceFlag {
 		deleteQuery = "DELETE FROM users WHERE username = $1"
 	}
-	res, err := getDb().Exec(deleteQuery, username)
+	res, err := db.GetDb().Exec(deleteQuery, username)
 	checkErr(err)
 	if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
 		if rowsAffected == 1 {
@@ -138,7 +96,7 @@ func deleteUser(username string) {
 
 func revokedUser(username string) {
 	if !userDeleted(username) {
-		res, err := getDb().Exec("UPDATE users SET revoked = 1 WHERE username = $1", username)
+		res, err := db.GetDb().Exec("UPDATE users SET revoked = 1 WHERE username = $1", username)
 		checkErr(err)
 		if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
 			if rowsAffected == 1 {
@@ -154,7 +112,7 @@ func revokedUser(username string) {
 
 func restoreUser(username string) {
 	if !userDeleted(username) {
-		res, err := getDb().Exec("UPDATE users SET revoked = 0 WHERE username = $1", username)
+		res, err := db.GetDb().Exec("UPDATE users SET revoked = 0 WHERE username = $1", username)
 		checkErr(err)
 		if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
 			if rowsAffected == 1 {
@@ -172,7 +130,7 @@ func checkUserExistent(username string) bool {
 	// we need to check if there is already such a user
 	// return true if user exist
 	var c int
-	_ = getDb().QueryRow("SELECT count(*) FROM users WHERE username = $1", username).Scan(&c)
+	_ = db.GetDb().QueryRow("SELECT count(*) FROM users WHERE username = $1", username).Scan(&c)
 	if c == 1 {
 		fmt.Printf("User %s exist\n", username)
 		return true
@@ -184,7 +142,7 @@ func checkUserExistent(username string) bool {
 func userDeleted(username string) bool {
 	// return true if user marked as deleted
 	u := User{}
-	_ = getDb().QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&u)
+	_ = db.GetDb().QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&u)
 	if u.deleted {
 		fmt.Printf("User %s marked as deleted\n", username)
 		return true
@@ -196,7 +154,7 @@ func userDeleted(username string) bool {
 func userIsActive(username string) bool {
 	// return true if user exist and not deleted and revoked
 	u := User{}
-	_ = getDb().QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&u)
+	_ = db.GetDb().QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&u)
 	if !u.revoked && !u.deleted {
 		fmt.Printf("User %s is active\n", username)
 		return true
@@ -213,7 +171,7 @@ func listUsers() []User {
 		condition = ""
 	}
 	query := "SELECT * FROM users " + condition
-	rows, err := getDb().Query(query)
+	rows, err := db.GetDb().Query(query)
 	checkErr(err)
 
 	for rows.Next() {
@@ -245,7 +203,7 @@ func printUsers() {
 
 func changeUserPassword(username, password string) {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	_, err := getDb().Exec("UPDATE users SET password = $1 WHERE username = $2", hash, username)
+	_, err := db.GetDb().Exec("UPDATE users SET password = $1 WHERE username = $2", hash, username)
 	checkErr(err)
 
 	fmt.Println("Password changed")
@@ -253,7 +211,7 @@ func changeUserPassword(username, password string) {
 
 func authUser(username, password string) {
 
-	row := getDb().QueryRow("select * from users where username = $1", username)
+	row := db.GetDb().QueryRow("select * from users where username = $1", username)
 	u := User{}
 	err := row.Scan(&u.id, &u.name, &u.password, &u.revoked, &u.deleted)
 	checkErr(err)

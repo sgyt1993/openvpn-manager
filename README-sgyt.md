@@ -20,5 +20,5 @@ npm run build
 ```
 ### 运行go项目增加环境变了
 ```shell
-OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt
+OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;OVPN_AUTH_DB_PATH=./easyrsa_master/pki/users.db;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
 ```
