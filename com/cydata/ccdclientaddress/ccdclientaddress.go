@@ -88,7 +88,7 @@ func queryAllCcdClientAddress() (ccdClientAddress []CcdClientAddress, err error)
 }
 
 func queryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClientAddress, err error) {
-	var queryRoleAll = "select id,account_id,client_address,mask from ccd_client_address where id = $1"
+	var queryRoleAll = "select id,account_id,client_address,mask from ccd_client_address where account_id = $1"
 	rows, err := db.GetDb().Query(queryRoleAll, accountId)
 	if err != nil {
 		err = fmt.Errorf("system is error")
@@ -97,8 +97,7 @@ func queryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClient
 	db.CheckErr(err)
 
 	for rows.Next() {
-		u := CcdClientAddress{}
-		err := rows.Scan(&u.Id, &u.AccountId, &u.ClientAddress, &u.Mask)
+		err := rows.Scan(&ccdClientAddress.Id, &ccdClientAddress.AccountId, &ccdClientAddress.ClientAddress, &ccdClientAddress.Mask)
 		if err != nil {
 			fmt.Println(err)
 			continue

@@ -19,7 +19,7 @@ type AccountRoleVO struct {
 	Id        int    `json:"id"`
 	RoleId    int    `json:"roleId"`
 	AccountId int    `json:"accountId"`
-	roleName  string `json:"roleName"`
+	RoleName  string `json:"roleName"`
 }
 
 func createAccountRole(accountRole *AccountRole) (err error) {
@@ -55,7 +55,7 @@ func queryAccountRoleByAccountId(accountId int) (accountRoleVOs []AccountRoleVO,
 
 	for rows.Next() {
 		u := AccountRoleVO{}
-		err := rows.Scan(&u.Id, &u.RoleId, &u.AccountId, &u.roleName)
+		err := rows.Scan(&u.Id, &u.RoleId, &u.AccountId, &u.RoleName)
 		if err != nil {
 			fmt.Println(err)
 			continue

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"ovpn-admin/com/cydata/accountrole"
 	"ovpn-admin/com/cydata/ccdclientaddress"
 	"ovpn-admin/com/cydata/ccdroute"
 	"ovpn-admin/com/cydata/commonresp"
@@ -468,10 +469,6 @@ func main() {
 	filter.RegisterFilterUri("/api/sync/last/try", login.JudgeLogin)
 	filter.RegisterFilterUri("/api/sync/last/successful", login.JudgeLogin)
 
-	filter.RegisterFilterUri("/api/role/add", login.JudgeLogin)
-	filter.RegisterFilterUri("/api/role/update", login.JudgeLogin)
-	filter.RegisterFilterUri("/api/role/del", login.JudgeLogin)
-	filter.RegisterFilterUri("/api/role/query", login.JudgeLogin)
 	filter.RegisterFilterUri(downloadCertsApiUrl, login.JudgeLogin)
 	filter.RegisterFilterUri(downloadCcdApiUrl, login.JudgeLogin)
 
@@ -497,9 +494,9 @@ func main() {
 	http.HandleFunc("/api/role/del", filter.Handle(role.Del))
 	http.HandleFunc("/api/role/query", filter.Handle(role.Query))
 
-	http.HandleFunc("/api/userRole/add", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/userRole/del", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/userRole/query", filter.Handle(ovpnAdmin.userShowCcdHandler))
+	http.HandleFunc("/api/accountRole/add", filter.Handle(accountrole.Add))
+	http.HandleFunc("/api/accountRole/del", filter.Handle(accountrole.Del))
+	http.HandleFunc("/api/accountRole/queryByAccountId", filter.Handle(accountrole.QueryByAccountId))
 
 	http.HandleFunc("/api/ccdClientAddress/add", filter.Handle(ccdclientaddress.Add))
 	http.HandleFunc("/api/ccdClientAddress/update", filter.Handle(ccdclientaddress.Update))

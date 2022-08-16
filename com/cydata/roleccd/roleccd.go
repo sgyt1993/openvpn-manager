@@ -36,10 +36,17 @@ func createRoleRoute(roleRoutes []RoleRoute) (err error) {
 	}()
 
 	for _, roleRoute := range roleRoutes {
-		_, err = dbClient.Exec("INSERT INTO role_ccdroute(role_id,ccd_route_d) VALUES ($1,$2)", roleRoute.RoleId, roleRoute.CcdRouteId)
+		_, err = dbClient.Exec("INSERT INTO role_ccdroute(role_id,ccd_route_id) VALUES ($1,$2)", roleRoute.RoleId, roleRoute.CcdRouteId)
+		db.CheckErr(err)
+		if err != nil {
+			break
+		}
 	}
-	db.CheckErr(err)
-	fmt.Printf("role_route created\n")
+
+	if err != nil {
+		fmt.Printf("role_route created\n")
+	}
+
 	return err
 }
 
@@ -58,7 +65,7 @@ func deleteRoleRoute(id int) (err error) {
 }
 
 func queryRoleRouteByRoleId(roleId int) (roleRoutes []RoleRouteVO, err error) {
-	var queryRoleAll = "select r.id,r.role_id,r.ccd_route_id,c.address,c.mask,c.description from role_route r left join ccd_route c on c.id = r.ccd_route_d where r.role_id = $1"
+	var queryRoleAll = "select r.id,r.role_id,r.ccd_route_id,c.address,c.mask,c.description from role_ccdroute r left join ccd_route c on c.id = r.ccd_route_id where r.role_id = $1"
 	rows, err := db.GetDb().Query(queryRoleAll, roleId)
 	if err != nil {
 		err = fmt.Errorf("system is error")
@@ -88,14 +95,14 @@ func Add(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := json.NewDecoder(req.Body).Decode(roleRoute)
+	err := json.NewDecoder(req.Body).Decode(&roleRoute)
 	err = createRoleRoute(roleRoute)
 	commonresp.JudgeError(w, "create ccdroute", err)
 }
 
 func Del(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	roleRouteIdStr := req.Form.Get("roleRouteId")
+	roleRouteIdStr := req.Form.Get("roleCcdRouteId")
 	if len(roleRouteIdStr) == 0 {
 		commonresp.JsonRespFail(w, "roleId is not empty")
 		return
@@ -107,7 +114,7 @@ func Del(w http.ResponseWriter, req *http.Request) {
 
 func QueryByRoleId(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	roleRouteIdStr := req.Form.Get("roleRouteId")
+	roleRouteIdStr := req.Form.Get("roleId")
 	if len(roleRouteIdStr) == 0 {
 		commonresp.JsonRespFail(w, "roleId is not empty")
 		return

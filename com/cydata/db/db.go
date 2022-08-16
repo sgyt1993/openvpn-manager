@@ -12,57 +12,60 @@ var (
 )
 
 func InitDb() {
-	_, err := GetDb().Exec(
+	db := GetDb()
+	_, err := db.Exec(
 		"CREATE TABLE IF NOT EXISTS users(" +
 			"id integer not null primary key autoincrement, " +
-			"username string UNIQUE, password string, " +
+			"username string UNIQUE, " +
+			"password string, " +
 			"revoked integer default 0, " +
 			"deleted integer default 0" +
 			")")
 	CheckErr(err)
 
 	// 创建account_role表
-	_, err = GetDb().Exec(
+	_, err = db.Exec(
 		"CREATE TABLE IF NOT EXISTS account_role(" +
-			"role_id int not null DEFAULT 0 COMMENT '角色id'," +
-			"account_id int not null DEFAULT 0 COMMENT '账号id'" +
+			"id integer not null primary key autoincrement, " +
+			"role_id integer not null DEFAULT 0, -- 角色id\n" +
+			"account_id integer not null DEFAULT 0 -- 账号id\n" +
 			")")
 	CheckErr(err)
 
 	// 创建role表
-	_, err = GetDb().Exec(
+	_, err = db.Exec(
 		"CREATE TABLE IF NOT EXISTS role(" +
 			"id integer not null primary key autoincrement, " +
-			"role_name string UNIQUE" +
+			"role_name string UNIQUE not null default '' -- 角色名称\n " +
 			")")
 	CheckErr(err)
 
 	//创建ccd表
-	_, err = GetDb().Exec(
+	_, err = db.Exec(
 		"CREATE TABLE IF NOT EXISTS ccd_route(" +
 			"id integer not null primary key autoincrement, " +
-			"address VARCHAR(100) not null DEFAULT '' COMMENT '地址'," +
-			"mask VARCHAR(100) not null DEFAULT '' COMMENT '掩码'," +
-			"description VARCHAR(100) not null DEFAULT '' COMMENT '描述'," +
+			"address VARCHAR(100) not null DEFAULT '', -- 地址 \n" +
+			"mask VARCHAR(100) not null DEFAULT '', -- 掩码 \n" +
+			"description VARCHAR(100) not null DEFAULT '' --描述 \n" +
 			")")
 	CheckErr(err)
 
 	//创建ccdClientAddress表
-	_, err = GetDb().Exec(
+	_, err = db.Exec(
 		"CREATE TABLE IF NOT EXISTS ccd_client_address(" +
 			"id integer not null primary key autoincrement, " +
-			"account_id int not null DEFAULT 0 COMMENT '用户id'," +
-			"client_address VARCHAR(100) not null DEFAULT '' COMMENT '区域code'," +
-			"mask VARCHAR(100) not null DEFAULT '' COMMENT '掩码'" +
+			"account_id integer not null DEFAULT 0, -- 用户id\n" +
+			"client_address VARCHAR(100) not null DEFAULT '', -- 区域code\n" +
+			"mask VARCHAR(100) not null DEFAULT '' -- 掩码\n" +
 			")")
 	CheckErr(err)
 
 	//创建 role_ccdroute 表
-	_, err = GetDb().Exec(
+	_, err = db.Exec(
 		"CREATE TABLE IF NOT EXISTS role_ccdroute(" +
 			"id integer not null primary key autoincrement, " +
-			"role_id int not null DEFAULT 0 COMMENT '角色id'," +
-			"ccd_route_id int not null DEFAULT 0 COMMENT '路由id'" +
+			"role_id integer not null DEFAULT 0, -- 角色id\n" +
+			"ccd_route_id integer not null DEFAULT 0 -- 路由id\n" +
 			")")
 	CheckErr(err)
 
