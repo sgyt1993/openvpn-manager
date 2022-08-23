@@ -74,6 +74,28 @@ func queryAllCcdRoute() (ccds []CcdRoute, err error) {
 	return ccds, err
 }
 
+func QueryAllCcdRouteByAccountId(account int) (ccds []CcdRoute, err error) {
+	var queryRoleAll = "select cr.id,cr.address,cr.mask,cr.description from account_role ar inner join  role_ccdroute rc on rc.role_id = ar.role_id inner join ccd_route cr on cr.id = rc.ccd_route_id where ar.account_id = $1  "
+	rows, err := db.GetDb().Query(queryRoleAll, account)
+	if err != nil {
+		err = fmt.Errorf("system is error")
+		return
+	}
+	db.CheckErr(err)
+
+	for rows.Next() {
+		u := CcdRoute{}
+		err := rows.Scan(&u.Id, &u.Address, &u.Mask, &u.Description)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		ccds = append(ccds, u)
+	}
+
+	return ccds, err
+}
+
 func Add(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	var ccd CcdRoute

@@ -2,7 +2,7 @@ package filter
 
 import (
 	"net/http"
-	"strings"
+	"ovpn-admin/com/cydata/antpath"
 )
 
 type FilterHandle func(rw http.ResponseWriter, req *http.Request) error
@@ -28,8 +28,9 @@ func (f *Filter) GetFilterHandle(uri string) FilterHandle {
 
 func (f *Filter) Handle(webHandle WebHandle) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
+		var matcher antpath.PathMatcher
 		for path, handle := range f.filterMap {
-			if strings.Contains(r.RequestURI, path) { //字符串的包含函数
+			if matcher.Match(r.RequestURI, path) {
 				//执行拦截业务逻辑
 				err := handle(rw, r)
 				if err != nil {

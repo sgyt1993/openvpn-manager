@@ -66,6 +66,28 @@ func queryAccountRoleByAccountId(accountId int) (accountRoleVOs []AccountRoleVO,
 	return accountRoleVOs, err
 }
 
+func QueryAccountRoleByRoleId(accountId int) (accountRoleVOs []AccountRoleVO, err error) {
+	var queryRoleAll = "select a.id,a.role_id,a.account_id,r.role_name from account_role a left join role r on a.role_id = r.id where a.role_id = $1"
+	rows, err := db.GetDb().Query(queryRoleAll, accountId)
+	if err != nil {
+		err = fmt.Errorf("system is error")
+		return
+	}
+	db.CheckErr(err)
+
+	for rows.Next() {
+		u := AccountRoleVO{}
+		err := rows.Scan(&u.Id, &u.RoleId, &u.AccountId, &u.RoleName)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		accountRoleVOs = append(accountRoleVOs, u)
+	}
+
+	return accountRoleVOs, err
+}
+
 func Add(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	var accountRole AccountRole

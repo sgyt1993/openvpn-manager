@@ -4,51 +4,9 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"ovpn-admin/com/cydata/db"
 	"text/tabwriter"
-)
-
-const (
-	version = "1.0.4"
-)
-
-var (
-	dbPath = kingpin.Flag("db.path", "path do openvpn-user db").Default("./openvpn-user.db").String()
-
-	dbInitCommand    = kingpin.Command("db-init", "Init db.")
-	dbMigrateCommand = kingpin.Command("db-migrate", "STUB: Migrate db.")
-
-	createCommand             = kingpin.Command("create", "Create user.")
-	createCommandUserFlag     = createCommand.Flag("user", "Username.").Required().String()
-	createCommandPasswordFlag = createCommand.Flag("password", "Password.").Required().String()
-
-	deleteCommand              = kingpin.Command("delete", "Delete user.")
-	deleteCommandUserForceFlag = deleteCommand.Flag("force", "delete from db.").Default("false").Bool()
-	deleteCommandUserFlag      = deleteCommand.Flag("user", "Username.").Required().String()
-
-	revokeCommand         = kingpin.Command("revoke", "Revoke user.")
-	revokeCommandUserFlag = revokeCommand.Flag("user", "Username.").Required().String()
-
-	restoreCommand         = kingpin.Command("restore", "Restore user.")
-	restoreCommandUserFlag = restoreCommand.Flag("user", "Username.").Required().String()
-
-	listCommand = kingpin.Command("list", "List active users.")
-	listAll     = listCommand.Flag("all", "Show all users include revoked and deleted.").Default("false").Bool()
-
-	checkCommand         = kingpin.Command("check", "check user existent.")
-	checkCommandUserFlag = checkCommand.Flag("user", "Username.").Required().String()
-
-	authCommand             = kingpin.Command("auth", "Auth user.")
-	authCommandUserFlag     = authCommand.Flag("user", "Username.").Required().String()
-	authCommandPasswordFlag = authCommand.Flag("password", "Password.").Required().String()
-
-	changePasswordCommand             = kingpin.Command("change-password", "Change password")
-	changePasswordCommandUserFlag     = changePasswordCommand.Flag("user", "Username.").Required().String()
-	changePasswordCommandPasswordFlag = changePasswordCommand.Flag("password", "Password.").Required().String()
-
-	debug = kingpin.Flag("debug", "Enable debug mode.").Default("false").Bool()
 )
 
 type User struct {
@@ -59,12 +17,8 @@ type User struct {
 	deleted  bool
 }
 
-func migrateDb() {
-	fmt.Println("STUB: Migrations are up to date")
-}
-
-func createUser(username, password string) {
-	if !checkUserExistent(username) {
+func CreateUser(username, password string) {
+	if !CheckUserExistent(username) {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 		_, err := db.GetDb().Exec("INSERT INTO users(username, password) VALUES ($1, $2)", username, string(hash))
 		checkErr(err)
@@ -76,11 +30,8 @@ func createUser(username, password string) {
 
 }
 
-func deleteUser(username string) {
+func DeleteUser(username string) {
 	deleteQuery := "UPDATE users SET deleted = 1 WHERE username = $1"
-	if *deleteCommandUserForceFlag {
-		deleteQuery = "DELETE FROM users WHERE username = $1"
-	}
 	res, err := db.GetDb().Exec(deleteQuery, username)
 	checkErr(err)
 	if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
@@ -88,13 +39,11 @@ func deleteUser(username string) {
 			fmt.Printf("User %s deleted\n", username)
 		}
 	} else {
-		if *debug {
-			fmt.Printf("ERROR: due deleting user %s: %s\n", username, rowsErr)
-		}
+		fmt.Printf("ERROR: due deleting user %s: %s\n", username, rowsErr)
 	}
 }
 
-func revokedUser(username string) {
+func RevokedUser(username string) {
 	if !userDeleted(username) {
 		res, err := db.GetDb().Exec("UPDATE users SET revoked = 1 WHERE username = $1", username)
 		checkErr(err)
@@ -103,14 +52,12 @@ func revokedUser(username string) {
 				fmt.Printf("User %s revoked\n", username)
 			}
 		} else {
-			if *debug {
-				fmt.Printf("ERROR: due reoking user %s: %s\n", username, rowsErr)
-			}
+			fmt.Printf("ERROR: due reoking user %s: %s\n", username, rowsErr)
 		}
 	}
 }
 
-func restoreUser(username string) {
+func RestoreUser(username string) {
 	if !userDeleted(username) {
 		res, err := db.GetDb().Exec("UPDATE users SET revoked = 0 WHERE username = $1", username)
 		checkErr(err)
@@ -119,14 +66,12 @@ func restoreUser(username string) {
 				fmt.Printf("User %s restored\n", username)
 			}
 		} else {
-			if *debug {
-				fmt.Printf("ERROR: due restoring user %s: %s\n", username, rowsErr)
-			}
+			fmt.Printf("ERROR: due restoring user %s: %s\n", username, rowsErr)
 		}
 	}
 }
 
-func checkUserExistent(username string) bool {
+func CheckUserExistent(username string) bool {
 	// we need to check if there is already such a user
 	// return true if user exist
 	var c int
@@ -167,9 +112,6 @@ func userIsActive(username string) bool {
 func listUsers() []User {
 	condition := "WHERE deleted = 0 AND revoked = 0"
 	var users []User
-	if *listAll {
-		condition = ""
-	}
 	query := "SELECT * FROM users " + condition
 	rows, err := db.GetDb().Query(query)
 	checkErr(err)
@@ -201,7 +143,7 @@ func printUsers() {
 	}
 }
 
-func changeUserPassword(username, password string) {
+func ChangeUserPassword(username, password string) {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	_, err := db.GetDb().Exec("UPDATE users SET password = $1 WHERE username = $2", hash, username)
 	checkErr(err)
@@ -220,9 +162,7 @@ func authUser(username, password string) {
 		err = bcrypt.CompareHashAndPassword([]byte(u.password), []byte(password))
 		if err != nil {
 			fmt.Println("Authorization failed")
-			if *debug {
-				fmt.Println("Passwords mismatched")
-			}
+			fmt.Println("Passwords mismatched")
 			os.Exit(1)
 		} else {
 			fmt.Println("Authorization successful")

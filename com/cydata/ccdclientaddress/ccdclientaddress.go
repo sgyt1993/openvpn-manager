@@ -16,6 +16,14 @@ type CcdClientAddress struct {
 	Mask          string `json:"mask"`
 }
 
+type CcdClientAddressVO struct {
+	Id            int    `json:"id"`
+	AccountId     int    `json:"accountId"`
+	ClientAddress string `json:"clientAddress"`
+	Mask          string `json:"mask"`
+	AccountName   string `json:"accountName"`
+}
+
 func checkUserExistent(accountId int) bool {
 	// we need to check if there is already such a user
 	// return true if user exist
@@ -87,8 +95,8 @@ func queryAllCcdClientAddress() (ccdClientAddress []CcdClientAddress, err error)
 	return ccdClientAddress, err
 }
 
-func queryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClientAddress, err error) {
-	var queryRoleAll = "select id,account_id,client_address,mask from ccd_client_address where account_id = $1"
+func QueryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClientAddressVO, err error) {
+	var queryRoleAll = "select ca.id,ca.account_id,ca.client_address,ca.mask,u.username from users u left join ccd_client_address ca on u.id = ca.account_id where u.account_id = $1"
 	rows, err := db.GetDb().Query(queryRoleAll, accountId)
 	if err != nil {
 		err = fmt.Errorf("system is error")
@@ -97,7 +105,7 @@ func queryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClient
 	db.CheckErr(err)
 
 	for rows.Next() {
-		err := rows.Scan(&ccdClientAddress.Id, &ccdClientAddress.AccountId, &ccdClientAddress.ClientAddress, &ccdClientAddress.Mask)
+		err := rows.Scan(&ccdClientAddress.Id, &ccdClientAddress.AccountId, &ccdClientAddress.ClientAddress, &ccdClientAddress.Mask, &ccdClientAddress.AccountName)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -162,6 +170,6 @@ func QueryByAccountId(w http.ResponseWriter, req *http.Request) {
 	}
 	accountId, _ := strconv.Atoi(accountIdStr)
 
-	ccdRoutes, err := queryCcdClientAddressByAccountId(accountId)
+	ccdRoutes, err := QueryCcdClientAddressByAccountId(accountId)
 	commonresp.JudgeError(w, ccdRoutes, err)
 }

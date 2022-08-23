@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	dbPath = kingpin.Flag("db.path", "path do openvpn-user db").Default("./openvpn.db").Envar("DB_PATH").String()
+	dbPath = kingpin.Flag("db.path", "path do openvpn db").Default("./openvpn.db").Envar("DB_PATH").String()
 )
 
 func InitDb() {
