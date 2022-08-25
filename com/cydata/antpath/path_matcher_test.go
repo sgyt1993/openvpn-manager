@@ -40,6 +40,7 @@ func TestIsPattern(t *testing.T) {
 }
 
 func TestMatchLog(t *testing.T) {
+	t.Log(matcher.Match("/api/**", "/api/users/list/dwdwd/dwdw"))
 	t.Log(matcher.Match("tes?", "test"))
 	t.Log(matcher.Match("/hotels/{hotel}", "/hotels/1"))
 	t.Log(matcher.Match("tes?", "tes"))

@@ -252,7 +252,7 @@ new Vue({
   },
   computed: {
     customAddressDisabled: function () {
-      return this.serverRole == "master" ? this.u.ccd.ClientAddress == "dynamic" : true
+      return this.u.ccd.ClientAddress == "dynamic"
     },
     ccdApplyStatusCssClass: function () {
         return this.u.ccdApplyStatus == 200 ? "alert-success" : "alert-danger"

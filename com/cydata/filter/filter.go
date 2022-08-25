@@ -26,11 +26,12 @@ func (f *Filter) GetFilterHandle(uri string) FilterHandle {
 	return f.filterMap[uri]
 }
 
+var matcher = antpath.New()
+
 func (f *Filter) Handle(webHandle WebHandle) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var matcher antpath.PathMatcher
 		for path, handle := range f.filterMap {
-			if matcher.Match(r.RequestURI, path) {
+			if matcher.Match(path, r.RequestURI) {
 				//执行拦截业务逻辑
 				err := handle(rw, r)
 				if err != nil {

@@ -25,7 +25,6 @@ func CreateUser(username, password string) {
 		fmt.Printf("User %s created\n", username)
 	} else {
 		fmt.Printf("ERROR: User %s already registered\n", username)
-		os.Exit(1)
 	}
 
 }
@@ -170,7 +169,6 @@ func authUser(username, password string) {
 		}
 	}
 	fmt.Println("Authorization failed")
-	os.Exit(1)
 }
 
 func checkErr(err error) {

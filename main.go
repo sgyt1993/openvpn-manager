@@ -55,7 +55,7 @@ const (
 
 var (
 	listenHost               = kingpin.Flag("listen.host", "host for ovpn-admin").Default("0.0.0.0").Envar("OVPN_LISTEN_HOST").String()
-	listenPort               = kingpin.Flag("listen.port", "port for ovpn-admin").Default("8090").Envar("OVPN_LISTEN_PORT").String()
+	listenPort               = kingpin.Flag("listen.port", "port for ovpn-admin").Default("8080").Envar("OVPN_LISTEN_PORT").String()
 	masterHost               = kingpin.Flag("master.host", "URL for the master server").Default("http://127.0.0.1").Envar("OVPN_MASTER_HOST").String()
 	masterBasicAuthUser      = kingpin.Flag("master.basic-auth.user", "user for master server's Basic Auth").Default("").Envar("OVPN_MASTER_USER").String()
 	masterBasicAuthPassword  = kingpin.Flag("master.basic-auth.password", "password for master server's Basic Auth").Default("").Envar("OVPN_MASTER_PASSWORD").String()
@@ -229,8 +229,7 @@ func (oAdmin *OvpnAdmin) userListHandler(w http.ResponseWriter, r *http.Request)
 
 func (oAdmin *OvpnAdmin) userStatisticHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	userStatistic, _ := json.Marshal(oAdmin.getUserStatistic(r.FormValue("username")))
-	fmt.Fprintf(w, "%s", userStatistic)
+	commonresp.JsonRespOK(w, oAdmin.getUserStatistic(r.FormValue("username")))
 }
 
 func (oAdmin *OvpnAdmin) userCreateHandler(w http.ResponseWriter, r *http.Request) {
@@ -246,13 +245,12 @@ func (oAdmin *OvpnAdmin) userCreateHandler(w http.ResponseWriter, r *http.Reques
 
 func (oAdmin *OvpnAdmin) userRevokeHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Fprintf(w, "%s", oAdmin.userRevoke(r.FormValue("username")))
+	commonresp.JsonRespOK(w, oAdmin.userRevoke(r.FormValue("username")))
 }
 
 func (oAdmin *OvpnAdmin) userUnrevokeHandler(w http.ResponseWriter, r *http.Request) {
-
 	r.ParseForm()
-	fmt.Fprintf(w, "%s", oAdmin.userUnrevoke(r.FormValue("username")))
+	commonresp.JsonRespOK(w, oAdmin.userUnrevoke(r.FormValue("username")))
 }
 
 func (oAdmin *OvpnAdmin) userChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -274,12 +272,12 @@ func (oAdmin *OvpnAdmin) userChangePasswordHandler(w http.ResponseWriter, r *htt
 
 func (oAdmin *OvpnAdmin) userShowConfigHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Fprintf(w, "%s", oAdmin.renderClientConfig(r.FormValue("username")))
+	commonresp.JsonRespOK(w, oAdmin.renderClientConfig(r.FormValue("username")))
 }
 
 func (oAdmin *OvpnAdmin) userDisconnectHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Fprintf(w, "%s", r.FormValue("username"))
+	commonresp.JsonRespOK(w, r.FormValue("username"))
 }
 
 func (oAdmin *OvpnAdmin) userShowCcdHandler(w http.ResponseWriter, r *http.Request) {
@@ -464,7 +462,7 @@ func main() {
 	static := CacheControlWrapper(http.FileServer(staticBox))
 
 	filter := filter.New()
-	filter.RegisterFilterUri("/api/*", login.JudgeLogin)
+	//filter.RegisterFilterUri("/api/**", login.JudgeLogin)
 
 	http.Handle("/", static)
 	http.HandleFunc("/sys/login", login.AccountLogin)
@@ -478,9 +476,6 @@ func main() {
 	http.HandleFunc("/api/user/statistic", filter.Handle(ovpnAdmin.userStatisticHandler))
 	http.HandleFunc("/api/user/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
 	http.HandleFunc("/api/user/ccd/apply", filter.Handle(RoleApplyCcdRoleHandler))
-
-	http.HandleFunc("/api/role/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/role/ccd/apply", filter.Handle(ovpnAdmin.userApplyCcdHandler))
 
 	http.HandleFunc("/api/role/add", filter.Handle(role.Add))
 	http.HandleFunc("/api/role/update", filter.Handle(role.Update))
@@ -896,7 +891,7 @@ func (oAdmin *OvpnAdmin) userCreate(username, password string) (bool, string) {
 		}
 	}
 
-	o := runBash(fmt.Sprintf("date +%%Y-%%m-%%d\\ %%H:%%M:%%S && cd %s && easyrsa build-client-full %s nopass", *easyrsaDirPath, username))
+	o := runBash(fmt.Sprintf("date +%%Y-%%m-%%d\\ %%H:%%M:%%S && cd %s && easyrsa build-client-full %s && %s", *easyrsaDirPath, username, password))
 	log.Println(o)
 
 	if *authByPassword {

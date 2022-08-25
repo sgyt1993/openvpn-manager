@@ -21,7 +21,7 @@
     <div slot="emptystate" class="d-flex justify-content-center">
       <h4>No users have been created yet.</h4>
       <br>
-      <button type="button" class="btn btn-sm btn-success el-square" v-if="serverRole == 'master'" v-on:click.stop="u.modalNewUserVisible=true">Add user</button>
+      <button type="button" class="btn btn-sm btn-success el-square"  v-on:click.stop="u.modalNewUserVisible=true">Add user</button>
     </div>
     <template slot="table-row" slot-scope="props">
       <span v-if="props.column.field == 'actions'">
@@ -125,7 +125,7 @@
             <h5 class="static-address-label ">Static address:</h5>
             <div class="input-group-prepend">
               <div class="input-group-text">
-                <input id="enable-static" type="checkbox" @change="staticAddrCheckboxOnChange()" v-if="serverRole == 'master'" v-bind:checked="!customAddressDisabled">
+                <input id="enable-static" type="checkbox" @change="staticAddrCheckboxOnChange()"  v-bind:checked="!customAddressDisabled">
               </div>
             </div>
             <input id="static-address" type="text" class="form-control" v-model="u.ccd.ClientAddress" placeholder="127.0.0.1" v-bind:disabled="customAddressDisabled">
@@ -139,7 +139,7 @@
                   <th scope="col">Address</th>
                   <th scope="col">Mask</th>
                   <th scope="col">Description</th>
-                  <th scope="col" v-if="serverRole == 'master'">Action</th>
+                  <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,29 +148,29 @@
                     <div v-if="serverRole == 'slave'">
                       {{ customRoute.Address }}
                     </div>
-                    <input v-if="serverRole == 'master'" v-model="customRoute.Address">
+                    <input v-model="customRoute.Address">
                   </td>
                   <td>
                     <div v-if="serverRole == 'slave'">
                     {{ customRoute.Mask }}
                     </div>
-                    <input v-if="serverRole == 'master'" v-model="customRoute.Mask">
+                    <input v-model="customRoute.Mask">
                   </td>
                   <td>
                     <div v-if="serverRole == 'slave'">
                     {{ customRoute.Description }}
                     </div>
-                    <input v-if="serverRole == 'master'" v-model="customRoute.Description">
+                    <input v-model="customRoute.Description">
                   </td>
-                  <td class="text-right" v-if="serverRole == 'master'">
-                      <button type="button" class="btn btn-danger btn-sm el-square modal-el-margin" v-if="serverRole == 'master'" v-on:click.stop="u.ccd.CustomRoutes.splice(index, 1)">Delete</button>
+                  <td class="text-right" >
+                      <button type="button" class="btn btn-danger btn-sm el-square modal-el-margin" v-on:click.stop="u.ccd.CustomRoutes.splice(index, 1)">Delete</button>
                   </td>
                 </tr>
-                <tr v-if="serverRole == 'master'">
+                <tr>
                   <td><input type="text" v-model="u.newRoute.Address"/></td>
                   <td><input type="text" v-model="u.newRoute.Mask"/></td>
                   <td><input type="text" v-model="u.newRoute.Description"/></td>
-                  <td class="text-right" v-if="serverRole == 'master'">
+                  <td class="text-right">
                     <button type="button" class="btn btn-success el-square modal-el-margin" v-on:click.stop="u.ccd.CustomRoutes.push(u.newRoute);u.newRoute={};">Add</button>
                   </td>
                 </tr>
@@ -184,7 +184,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-success el-square modal-el-margin" v-if="serverRole == 'master'" v-on:click.stop="ccdApply()">Save</button>
+            <button type="button" class="btn btn-success el-square modal-el-margin" v-on:click.stop="ccdApply()">Save</button>
             <button type="button" class="btn btn-primary el-square modal-el-margin" v-on:click.stop="u.ccd={Name:'',ClientAddress:'',CustomRoutes:[]};u.ccdApplyStatusMessage='';u.ccdApplyStatus='';u.modalShowCcdVisible=false">Close</button>
         </div>
       </div>
