@@ -128,7 +128,7 @@ func listUsers() []User {
 	return users
 }
 
-func printUsers() {
+func PrintUsers() {
 	ul := listUsers()
 	if len(ul) > 0 {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent|tabwriter.Debug)
@@ -150,7 +150,7 @@ func ChangeUserPassword(username, password string) {
 	fmt.Println("Password changed")
 }
 
-func authUser(username, password string) {
+func AuthUser(username, password string) {
 
 	row := db.GetDb().QueryRow("select * from users where username = $1", username)
 	u := User{}
