@@ -12,8 +12,6 @@ const (
 )
 
 var (
-	dbPath = kingpin.Flag("db.path", "path do openvpn-user db").Default("./openvpn-user.db").String()
-
 	dbInitCommand    = kingpin.Command("db-init", "Init db.")
 	dbMigrateCommand = kingpin.Command("db-migrate", "STUB: Migrate db.")
 

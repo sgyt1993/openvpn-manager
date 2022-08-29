@@ -1,6 +1,5 @@
 ## 完成内容
 后端逻辑直接修改
-
     1.用户登录功能
     2.用户拦截功能
     3.用户角色功能
@@ -22,3 +21,12 @@ npm run build
 ```shell
 OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;OVPN_AUTH_DB_PATH=./easyrsa_master/pki/users.db;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
 ```
+
+###编译 Dockerfile.openvpn 命令
+docker build -t openvpn:v1 -f Dockerfile.openvpn .
+
+
+### 启动
+docker-compose up
+
+

@@ -1,4 +1,14 @@
+FROM golang:1.16.0-buster AS builder
+ENV GO111MODULE=on
+ENV GOPROXY="https://goproxy.cn"
+WORKDIR /app
+COPY . .
+RUN go mod download
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o openvpn-user  com/cydata/usercmd/openvpn-user.go
+
 FROM alpine:3.14
+WORKDIR /app
+COPY --from=builder /app/openvpn-user /usr/local/bin
 RUN apk add --update bash openvpn easy-rsa  && \
     ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin && \
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
