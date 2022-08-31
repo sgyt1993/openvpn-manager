@@ -19,12 +19,12 @@ npm run build
 ```
 ### 运行go项目增加环境变了
 ```shell
-OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;OVPN_AUTH_DB_PATH=./easyrsa_master/pki/users.db;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
+OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;OVPN_AUTH_DB_PATH=./easyrsa_master/pki/openvpn.db;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
 ```
 
 ###编译 Dockerfile.openvpn 命令
 docker build -t openvpn:v1 -f Dockerfile.openvpn .
-
+docker run -t -i openvpn:v1 /bin/bash
 
 ### 启动
 docker-compose up

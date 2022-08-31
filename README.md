@@ -144,7 +144,7 @@ Flags:
   --auth.password              enable additional password authorization
   (or $OVPN_AUTH)
 
-  --auth.db="./easyrsa/pki/users.db"
+  --auth.db="./easyrsa/pki/openvpn.db"
   (or $OVPN_AUTH_DB_PATH)      database path for password authorization
 
   --debug                      enable debug mode

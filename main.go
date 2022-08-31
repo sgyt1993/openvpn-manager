@@ -923,7 +923,7 @@ func (oAdmin *OvpnAdmin) userChangePassword(username, password string) (bool, st
 		}
 
 		if !exitFlag {
-			log.Println("Creating user in users.db")
+			log.Println("Creating user in openvpn.db")
 			user.CreateUser(username, password)
 		}
 

@@ -33,7 +33,7 @@ services:
       OVPN_CCD: "True"
       OVPN_CCD_PATH: "/mnt/ccd"
       OVPN_AUTH: "true"
-      OVPN_AUTH_DB_PATH: "/mnt/easyrsa/pki/users.db"
+      OVPN_AUTH_DB_PATH: "/mnt/easyrsa/pki/openvpn.db"
     network_mode: service:openvpn
     volumes:
       - ./easyrsa_master:/mnt/easyrsa
