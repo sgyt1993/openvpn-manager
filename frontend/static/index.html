@@ -14,8 +14,8 @@
     :row-style-class="rowStyleClassFn"
     :search-options="{ enabled: true}" >
     <div slot="table-actions">
-      <button type="button" class="btn btn-sm btn-success el-square" v-show="serverRole == 'master'" v-on:click.stop="u.modalNewUserVisible=true">Add user</button>
-      <b-badget class="btn btn-sm btn-info el-square" v-if="serverRole == 'slave'">Slave - last sync: {{ lastSync }}</b-badget>
+      <button type="button" class="btn btn-sm btn-success el-square" v-on:click.stop="u.modalNewUserVisible=true">Add user</button>
+      <b-badget class="btn btn-sm btn-info el-square" >Slave - last sync: {{ lastSync }}</b-badget>
       <button type="button" class="btn btn-sm btn-secondary el-square" v-on:click.stop="filters.hideRevoked=!filters.hideRevoked;this.$cookies.set('hideRevoked',!(this.$cookies.get('hideRevoked') == 'true'), -1);">{{ revokeFilterText }}</button>
     </div>
     <div slot="emptystate" class="d-flex justify-content-center">
@@ -35,7 +35,7 @@
           @click.left.stop="rowActionFn"
           v-for="action in actions"
           v-bind:class="action.class"
-          v-if="action.showWhenStatus == props.row.AccountStatus && action.showForServerRole.includes(serverRole) && action.showForModule.some(p=> modulesEnabled.includes(p))">
+          >
           {{ action.label }}
         </button>
       </span>
@@ -145,19 +145,19 @@
               <tbody>
                 <tr v-for="(customRoute, index) in u.ccd.CustomRoutes">
                   <td>
-                    <div v-if="serverRole == 'slave'">
+                    <div>
                       {{ customRoute.Address }}
                     </div>
                     <input v-model="customRoute.Address">
                   </td>
                   <td>
-                    <div v-if="serverRole == 'slave'">
+                    <div>
                     {{ customRoute.Mask }}
                     </div>
                     <input v-model="customRoute.Mask">
                   </td>
                   <td>
-                    <div v-if="serverRole == 'slave'">
+                    <div>
                     {{ customRoute.Description }}
                     </div>
                     <input v-model="customRoute.Description">

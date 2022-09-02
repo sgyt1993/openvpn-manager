@@ -891,7 +891,7 @@ func (oAdmin *OvpnAdmin) userCreate(username, password string) (bool, string) {
 		}
 	}
 
-	o := runBash(fmt.Sprintf("date +%%Y-%%m-%%d\\ %%H:%%M:%%S && cd %s && easyrsa build-client-full %s && %s", *easyrsaDirPath, username, password))
+	o := runBash(fmt.Sprintf("date +%%Y-%%m-%%d\\ %%H:%%M:%%S && cd %s && easyrsa build-client-full %s nopass", *easyrsaDirPath, username))
 	log.Println(o)
 
 	if *authByPassword {
