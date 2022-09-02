@@ -38,14 +38,19 @@ OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd
 ```
 
 ###编译 Dockerfile.openvpn 命令
+```shell
 docker build -t openvpn:v1 -f Dockerfile.openvpn .
-
 docker run -t -i openvpn:v1 /bin/bash
+```
 
 ### 启动
+```shell
 docker-compose up
+```
 
 ### 结束
+```shell
 docker-compose down
+```
 
 
