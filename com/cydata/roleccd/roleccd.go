@@ -86,6 +86,51 @@ func queryRoleRouteByRoleId(roleId int) (roleRoutes []RoleRouteVO, err error) {
 	return roleRoutes, err
 }
 
+func QueryCcdRouteById(ccdRouteId int) (roleRoute RoleRoute, err error) {
+	var queryRoleById = "select id,role_id,ccd_route_id from role_ccdroute where ccd_route_id = $1"
+	rows, err := db.GetDb().Query(queryRoleById, ccdRouteId)
+	if err != nil {
+		err = fmt.Errorf("system is error")
+		return
+	}
+	db.CheckErr(err)
+
+	for rows.Next() {
+		u := RoleRoute{}
+		err := rows.Scan(&u.Id, &u.RoleId, &u.CcdRouteId)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		roleRoute = u
+		break
+	}
+
+	return roleRoute, err
+}
+
+func queryAllNotInRoleId(roleId int) (ccd []RoleRouteVO, err error) {
+	var queryRoleAll = "select id,address,mask,description from ccd_route where id not in (select ccd_route_id from role_ccdroute where role_id = $1)"
+	rows, err := db.GetDb().Query(queryRoleAll, roleId)
+	if err != nil {
+		err = fmt.Errorf("system is error")
+		return
+	}
+	db.CheckErr(err)
+
+	for rows.Next() {
+		u := RoleRouteVO{}
+		err := rows.Scan(&u.CcdRouteId, &u.Address, &u.Mask, &u.Description)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		ccd = append(ccd, u)
+	}
+
+	return ccd, err
+}
+
 func Add(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	var roleRoute []RoleRoute
@@ -119,7 +164,19 @@ func QueryByRoleId(w http.ResponseWriter, req *http.Request) {
 		commonresp.JsonRespFail(w, "roleId is not empty")
 		return
 	}
-	roleRouteId, _ := strconv.Atoi(roleRouteIdStr)
-	roleRoutes, err := queryRoleRouteByRoleId(roleRouteId)
+	roleId, _ := strconv.Atoi(roleRouteIdStr)
+	roleRoutes, err := queryRoleRouteByRoleId(roleId)
 	commonresp.JudgeError(w, roleRoutes, err)
+}
+
+func QueryAllNotInRoleId(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	roleRouteIdStr := req.Form.Get("roleId")
+	if len(roleRouteIdStr) == 0 {
+		commonresp.JsonRespFail(w, "roleId is not empty")
+		return
+	}
+	roleId, _ := strconv.Atoi(roleRouteIdStr)
+	ccdRoutes, err := queryAllNotInRoleId(roleId)
+	commonresp.JudgeError(w, ccdRoutes, err)
 }

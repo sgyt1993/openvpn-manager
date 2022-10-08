@@ -74,8 +74,8 @@ func updateRole(r *Role) (err error) {
 }
 
 func queryRoleAll() (roles []Role, err error) {
-	var queryRoleAll = "select id,role_name from role"
-	rows, err := db.GetDb().Query(queryRoleAll)
+	var queryRoleAllSql = "select id,role_name from role"
+	rows, err := db.GetDb().Query(queryRoleAllSql)
 	if err != nil {
 		err = fmt.Errorf("system is error")
 		return

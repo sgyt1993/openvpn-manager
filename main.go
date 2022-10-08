@@ -234,6 +234,7 @@ func (oAdmin *OvpnAdmin) userStatisticHandler(w http.ResponseWriter, r *http.Req
 
 func (oAdmin *OvpnAdmin) userCreateHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
+
 	userCreated, userCreateStatus := oAdmin.userCreate(r.FormValue("username"), r.FormValue("password"))
 
 	if userCreated {
@@ -272,7 +273,7 @@ func (oAdmin *OvpnAdmin) userChangePasswordHandler(w http.ResponseWriter, r *htt
 
 func (oAdmin *OvpnAdmin) userShowConfigHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	commonresp.JsonRespOK(w, oAdmin.renderClientConfig(r.FormValue("username")))
+	fmt.Fprintf(w, "%s", oAdmin.renderClientConfig(r.Form.Get("username")))
 }
 
 func (oAdmin *OvpnAdmin) userDisconnectHandler(w http.ResponseWriter, r *http.Request) {
@@ -462,7 +463,7 @@ func main() {
 	static := CacheControlWrapper(http.FileServer(staticBox))
 
 	filter := filter.New()
-	//filter.RegisterFilterUri("/api/**", login.JudgeLogin)
+	filter.RegisterFilterUri("/api/**", login.JudgeLogin)
 
 	http.Handle("/", static)
 	http.HandleFunc("/sys/login", login.AccountLogin)
@@ -500,6 +501,7 @@ func main() {
 	http.HandleFunc("/api/roleCcd/add", filter.Handle(roleccd.Add))
 	http.HandleFunc("/api/roleCcd/del", filter.Handle(roleccd.Del))
 	http.HandleFunc("/api/roleCcd/queryByRoleId", filter.Handle(roleccd.QueryByRoleId))
+	http.HandleFunc("/api/roleCcd/queryAllNotInRoleId", filter.Handle(roleccd.QueryAllNotInRoleId))
 
 	http.HandleFunc("/api/sync/last/try", filter.Handle(ovpnAdmin.lastSyncTimeHandler))
 	http.HandleFunc("/api/sync/last/successful", filter.Handle(ovpnAdmin.lastSuccessfulSyncTimeHandler))

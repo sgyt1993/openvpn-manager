@@ -3,9 +3,11 @@ package ccdroute
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"ovpn-admin/com/cydata/commonresp"
 	"ovpn-admin/com/cydata/db"
+	"ovpn-admin/com/cydata/roleccd"
 	"strconv"
 )
 
@@ -100,12 +102,13 @@ func Add(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	var ccd CcdRoute
 
-	if req.Body == nil {
+	body, err := ioutil.ReadAll(req.Body)
+	if body == nil || err != nil {
 		commonresp.JsonRespFail(w, "Please send a request body")
 		return
 	}
-
-	err := json.NewDecoder(req.Body).Decode(&ccd)
+	json.Unmarshal([]byte(body), &ccd)
+	//err := json.NewDecoder(req.Body).Decode(&ccd)
 	err = createCcdRoute(&ccd)
 	commonresp.JudgeError(w, "create ccdroute", err)
 }
@@ -118,7 +121,13 @@ func Del(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	ccdRouteId, _ := strconv.Atoi(ccdRouteIdStr)
-	err := deleteCcdRoute(ccdRouteId)
+	ccd, err := roleccd.QueryCcdRouteById(ccdRouteId)
+	if ccd.Id != 0 {
+		commonresp.JsonRespFail(w, "this ccdroute is use,do not del")
+		return
+	}
+
+	err = deleteCcdRoute(ccdRouteId)
 	commonresp.JudgeError(w, "del ccdRoute", err)
 }
 

@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-var sysAccountName = "sgyt"
-var sysPassword = "sgyt"
+var sysAccountName = "admin"
+var sysPassword = "111111"
 
 const (
 	jwtIssuer = "openvpn"
@@ -37,11 +37,36 @@ func AccountLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	toke, _ := CreateToken(userName)
+	expiration := time.Now()
+	expiration = expiration.AddDate(0, 0, 1)
+	cookie := http.Cookie{
+		Name:    "token",
+		Value:   toke,
+		Expires: expiration,
+		Path:    "/",
+	}
+	http.SetCookie(w, &cookie)
+
+	//跳转主页
+	w.Header().Set("Cache-Control", "must-revalidate, no-store")
+	w.Header().Set("Content-Type", " text/html;charset=UTF-8")
 	commonresp.JsonRespOK(w, toke)
 }
 
 func JudgeLogin(rw http.ResponseWriter, req *http.Request) error {
-	token := req.Header.Get("token")
+	tokenCookie, _ := req.Cookie("token")
+	if tokenCookie == nil {
+		rw.Header().Set("Cache-Control", "must-revalidate, no-store")
+		rw.Header().Set("Content-Type", " text/html;charset=UTF-8")
+		// 模拟重定向到login接口下
+		rw.Header().Set("Location", "/login")
+		rw.WriteHeader(http.StatusFound)
+		return fmt.Errorf("have no token")
+	}
+
+	token := tokenCookie.Value
+	fmt.Println(token)
+
 	if len(token) == 0 {
 		rw.Header().Set("Cache-Control", "must-revalidate, no-store")
 		rw.Header().Set("Content-Type", " text/html;charset=UTF-8")
@@ -57,7 +82,7 @@ func JudgeLogin(rw http.ResponseWriter, req *http.Request) error {
 		rw.Header().Set("Cache-Control", "must-revalidate, no-store")
 		rw.Header().Set("Content-Type", " text/html;charset=UTF-8")
 		// 模拟重定向到login接口下
-		rw.Header().Set("Location", "/login")
+		rw.Header().Set("Location", "/login.html")
 		rw.WriteHeader(http.StatusFound)
 		return fmt.Errorf("have no token")
 	}
@@ -105,16 +130,12 @@ func ParseToken(token string) (*Claims, error) {
 	var nbfErr *jwt.TokenNotValidYetError
 
 	// Use xerrors.Is to see what kind of error(s) occurred
-	if tokenClaims.Valid {
-		fmt.Println("You look nice today")
-	} else if xerrors.As(err, &uErr) {
-		fmt.Println("That's not even a token")
+	if xerrors.As(err, &uErr) {
+		return nil, fmt.Errorf("That's not even a token")
 	} else if xerrors.As(err, &expErr) {
-		fmt.Println("Timing is everything")
+		return nil, fmt.Errorf("Timing is everything")
 	} else if xerrors.As(err, &nbfErr) {
-		fmt.Println("Timing is everything")
-	} else {
-		fmt.Println("Couldn't handle this token:", err)
+		return nil, fmt.Errorf("Timing is everything")
 	}
 	return nil, err
 }

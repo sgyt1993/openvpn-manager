@@ -135,6 +135,13 @@ new Vue({
         showForModule: ["ccd"],
       },
       {
+        name: 'u-edit-staticAddress',
+        label: 'Edit staticAddress',
+        class: 'btn-primary',
+        showWhenStatus: 'Active',
+        showForModule: ["ccd"],
+      },
+      {
         name: 'u-edit-ccd',
         label: 'Show routes',
         class: 'btn-primary',
@@ -168,7 +175,25 @@ new Vue({
       newRoute: {},
       ccdApplyStatus: "",
       ccdApplyStatusMessage: "",
+    },
+    role: {
+      newRoleName: '',
+      newRoleCreateError: '',
+      passwordChangeMessage: '',
+      modalShowConfigVisible: false,
+      modalShowCcdVisible: false,
+      modalNewRoleVisible: false,
+      openvpnConfig: '',
+      ccd: {
+        Name: '',
+        ClientAddress: '',
+        CustomRoutes: []
+      },
+      newRoute: {},
+      ccdApplyStatus: "",
+      ccdApplyStatusMessage: "",
     }
+
   },
   watch: {
   },
@@ -203,7 +228,7 @@ new Vue({
       data.append('username', _this.username);
       axios.request(axios_cfg('api/user/config/show', data, 'form'))
       .then(function(response) {
-        _this.u.openvpnConfig = response.data;
+        _this.u.openvpnConfig = response.data.msg;
       });
     })
     _this.$root.$on('u-download-config', function () {
@@ -225,7 +250,7 @@ new Vue({
       data.append('username', _this.username);
       axios.request(axios_cfg('api/user/ccd', data, 'form'))
       .then(function(response) {
-        _this.u.ccd = response.data;
+        _this.u.ccd = response.data.msg;
       });
     })
     _this.$root.$on('u-disconnect-user', function () {
@@ -234,7 +259,7 @@ new Vue({
       data.append('username', _this.username);
       axios.request(axios_cfg('api/user/disconnect', data, 'form'))
       .then(function(response) {
-        console.log(response.data);
+        console.log(response.data.msg);
       });
     })
     _this.$root.$on('u-change-password', function () {
@@ -294,7 +319,19 @@ new Vue({
           if(response.data.code == 200){
              _this.rows = Array.isArray(response.data.msg) ? response.data.msg : [];
           }else{
-            alert(response.data.message);
+            alert(response.data.msg);
+          }
+        });
+    },
+
+    getRoleData: function() {
+      var _this = this;
+      axios.request(axios_cfg('api/role/query'))
+        .then(function(response) {
+          if(response.data.code == 200){
+            _this.rows = Array.isArray(response.data.msg) ? response.data.msg : [];
+          }else{
+            alert(response.data.msg);
           }
         });
     },
@@ -329,11 +366,44 @@ new Vue({
         _this.getUserData();
       })
       .catch(function(error) {
-        _this.u.newUserCreateError = error.response.data;
+        if(response.data.code == 200){
+          _this.u.newUserCreateError = error.response.data.msg;
+        }else{
+          alert(response.data.msg);
+        }
         _this.$notify({title: 'New user ' + _this.username + ' creation failed.', type: 'error'})
 
       });
     },
+
+
+    createRole: function() {
+      var _this = this;
+
+      _this.role.newRoleCreateError = "";
+
+      data.append('username', _this.role.newRoleName);
+
+      _this.roleName = _this.role.newRoleName;
+
+      axios.request(axios_cfg('api/role/create', data, 'form'))
+        .then(function(response) {
+          _this.$notify({title: 'New role ' + _this.roleName + ' created', type: 'success'})
+          _this.role.modalNewRoleVisible = false;
+          _this.role.newRoleName = '';
+          _this.getRoleData();
+        })
+        .catch(function(error) {
+          if(response.data.code == 200){
+            _this.u.newRoleCreateError = error.response.data.msg;
+          }else{
+            alert(response.data.msg);
+          }
+          _this.$notify({title: 'New role ' + _this.username + ' creation failed.', type: 'error'})
+
+        });
+    },
+
 
     ccdApply: function() {
       var _this = this;
@@ -344,12 +414,16 @@ new Vue({
       axios.request(axios_cfg('api/user/ccd/apply', JSON.stringify(_this.u.ccd), 'json'))
       .then(function(response) {
         _this.u.ccdApplyStatus = 200;
-        _this.u.ccdApplyStatusMessage = response.data;
+        if(response.data.code == 200){
+          _this.u.ccdApplyStatusMessage = response.data.msg;
+        }else{
+          alert(response.data.msg);
+        }
         _this.$notify({title: 'Ccd for user ' + _this.username + ' applied', type: 'success'})
       })
       .catch(function(error) {
         _this.u.ccdApplyStatus = error.response.status;
-        _this.u.ccdApplyStatusMessage = error.response.data;
+        _this.u.ccdApplyStatusMessage = error.response.data.msg;
         _this.$notify({title: 'Ccd for user ' + _this.username + ' apply failed ', type: 'error'})
       });
     },
@@ -373,7 +447,7 @@ new Vue({
         })
         .catch(function(error) {
           _this.u.passwordChangeStatus = error.response.status;
-          _this.u.passwordChangeMessage = error.response.data.message;
+          _this.u.passwordChangeMessage = error.response.data.msg.message;
           _this.$notify({title: 'Changing password for user ' + _this.username + ' failed!', type: 'error'})
         });
     },

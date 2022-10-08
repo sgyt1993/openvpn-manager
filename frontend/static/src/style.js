@@ -1,4 +1,4 @@
-import 'normalize.css';
+import '../../node_modules/normalize.css/normalize.css';
 import 'vue-good-table/dist/vue-good-table.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
