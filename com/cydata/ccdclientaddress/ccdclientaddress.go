@@ -60,8 +60,8 @@ func deleteCcdClientAddress(id int) (err error) {
 }
 
 func updateCcdClientAddress(ccdClientAddress *CcdClientAddress) (err error) {
-	var updateSql = "update ccd_client_address set  account_id = $1,client_address = $2,mask = $3 where id = $4"
-	res, err := db.GetDb().Exec(updateSql, ccdClientAddress.AccountId, ccdClientAddress.ClientAddress, ccdClientAddress.Mask, ccdClientAddress.Id)
+	var updateSql = "update ccd_client_address set client_address = $1,mask = $2 where account_id = $3"
+	res, err := db.GetDb().Exec(updateSql, ccdClientAddress.ClientAddress, ccdClientAddress.Mask, ccdClientAddress.AccountId)
 	db.CheckErr(err)
 	if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
 		return fmt.Errorf("ERROR:update ccdClientAddress id %d: %s\n", ccdClientAddress.Id, rowsErr)
@@ -96,7 +96,7 @@ func queryAllCcdClientAddress() (ccdClientAddress []CcdClientAddress, err error)
 }
 
 func QueryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClientAddressVO, err error) {
-	var queryRoleAll = "select ca.id,ca.account_id,ca.client_address,ca.mask,u.username from users u left join ccd_client_address ca on u.id = ca.account_id where u.account_id = $1"
+	var queryRoleAll = "select ca.id,ca.account_id,ca.client_address,ca.mask,u.username from users u left join ccd_client_address ca on u.id = ca.account_id where u.id = $1"
 	rows, err := db.GetDb().Query(queryRoleAll, accountId)
 	if err != nil {
 		err = fmt.Errorf("system is error")
@@ -115,7 +115,7 @@ func QueryCcdClientAddressByAccountId(accountId int) (ccdClientAddress CcdClient
 	return ccdClientAddress, err
 }
 
-func Add(w http.ResponseWriter, req *http.Request) {
+func AddOrUpdate(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	var ccdClientAddress CcdClientAddress
 
@@ -125,7 +125,13 @@ func Add(w http.ResponseWriter, req *http.Request) {
 	}
 
 	err := json.NewDecoder(req.Body).Decode(&ccdClientAddress)
-	err = createCcdClientAddress(&ccdClientAddress)
+
+	ccdRoutes, err := QueryCcdClientAddressByAccountId(ccdClientAddress.AccountId)
+	if ccdRoutes.Id != 0 {
+		err = updateCcdClientAddress(&ccdClientAddress)
+	} else {
+		err = createCcdClientAddress(&ccdClientAddress)
+	}
 	commonresp.JudgeError(w, "create ccdClientAddress", err)
 }
 
@@ -139,21 +145,6 @@ func Del(w http.ResponseWriter, req *http.Request) {
 	ccdRouteId, _ := strconv.Atoi(ccdRouteIdStr)
 	err := deleteCcdClientAddress(ccdRouteId)
 	commonresp.JudgeError(w, "del ccdClientAddress", err)
-}
-
-func Update(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	var ccdClientAddress CcdClientAddress
-
-	if req.Body == nil {
-		commonresp.JsonRespFail(w, "Please send a request body")
-		return
-	}
-
-	err := json.NewDecoder(req.Body).Decode(&ccdClientAddress)
-
-	err = updateCcdClientAddress(&ccdClientAddress)
-	commonresp.JudgeError(w, "update ccdClientAddress", err)
 }
 
 func Query(w http.ResponseWriter, req *http.Request) {

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -186,12 +187,15 @@ type openvpnClientConfig struct {
 }
 
 type OpenvpnClient struct {
+	Id               int    `json:"id"`
 	Identity         string `json:"Identity"`
 	AccountStatus    string `json:"AccountStatus"`
 	ExpirationDate   string `json:"ExpirationDate"`
 	RevocationDate   string `json:"RevocationDate"`
 	ConnectionStatus string `json:"ConnectionStatus"`
 	ConnectionServer string `json:"ConnectionServer"`
+	RoleId           int    `json:"roleId"`
+	RoleName         string `json:"roleName"`
 }
 
 type Ccd struct {
@@ -224,7 +228,12 @@ type clientStatus struct {
 }
 
 func (oAdmin *OvpnAdmin) userListHandler(w http.ResponseWriter, r *http.Request) {
-	commonresp.JsonRespOK(w, oAdmin.clients)
+	ls := list.New()
+	for _, data := range oAdmin.clients {
+		ls.PushFront(data.Identity)
+	}
+	client := oAdmin.usersList()
+	commonresp.JsonRespOK(w, client)
 }
 
 func (oAdmin *OvpnAdmin) userStatisticHandler(w http.ResponseWriter, r *http.Request) {
@@ -284,6 +293,49 @@ func (oAdmin *OvpnAdmin) userDisconnectHandler(w http.ResponseWriter, r *http.Re
 func (oAdmin *OvpnAdmin) userShowCcdHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	commonresp.JsonRespOK(w, oAdmin.getCcd(r.FormValue("username")))
+}
+
+func UserCcdApply(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	accountIdStr := req.Form.Get("accountId")
+	if len(accountIdStr) == 0 {
+		commonresp.JsonRespFail(w, "roleId is not empty")
+		return
+	}
+	accountId, _ := strconv.Atoi(accountIdStr)
+
+	//账号查询对应ccd_route,ccd_client_address 拼接成ccd 保存
+	fmt.Printf("ccd apply accountid : %d \n", accountId)
+	ccdClientAddress, err := ccdclientaddress.QueryCcdClientAddressByAccountId(accountId)
+	if err != nil {
+		commonresp.JsonRespFail(w, "system fail")
+		return
+	}
+
+	ccds, err := ccdroute.QueryAllCcdRouteByAccountId(accountId)
+	if err != nil {
+		commonresp.JsonRespFail(w, "system fail")
+		return
+	}
+
+	ccd := ccdClientAddressVOCcdRounteConverCcd(ccdClientAddress, ccds)
+	ccdApplied, applyStatus := ModifyCcd(ccd)
+	if ccdApplied {
+		commonresp.JsonRespOK(w, "ccd apply success")
+		return
+	} else {
+		commonresp.JsonRespFail(w, applyStatus)
+		return
+	}
+
+	if err != nil {
+		commonresp.JsonRespOK(w, "ccd apply success")
+		return
+	} else {
+		commonresp.JsonRespFail(w, "ccd apply fail")
+		return
+	}
+
 }
 
 func RoleApplyCcdRoleHandler(w http.ResponseWriter, req *http.Request) {
@@ -476,7 +528,8 @@ func main() {
 	http.HandleFunc("/api/user/disconnect", filter.Handle(ovpnAdmin.userDisconnectHandler))
 	http.HandleFunc("/api/user/statistic", filter.Handle(ovpnAdmin.userStatisticHandler))
 	http.HandleFunc("/api/user/ccd", filter.Handle(ovpnAdmin.userShowCcdHandler))
-	http.HandleFunc("/api/user/ccd/apply", filter.Handle(RoleApplyCcdRoleHandler))
+	http.HandleFunc("/api/user/userCcdApply", filter.Handle(UserCcdApply))
+	http.HandleFunc("/api/user/role/apply", filter.Handle(RoleApplyCcdRoleHandler))
 
 	http.HandleFunc("/api/role/add", filter.Handle(role.Add))
 	http.HandleFunc("/api/role/update", filter.Handle(role.Update))
@@ -487,8 +540,7 @@ func main() {
 	http.HandleFunc("/api/accountRole/del", filter.Handle(accountrole.Del))
 	http.HandleFunc("/api/accountRole/queryByAccountId", filter.Handle(accountrole.QueryByAccountId))
 
-	http.HandleFunc("/api/ccdClientAddress/add", filter.Handle(ccdclientaddress.Add))
-	http.HandleFunc("/api/ccdClientAddress/update", filter.Handle(ccdclientaddress.Update))
+	http.HandleFunc("/api/ccdClientAddress/addOrUpdate", filter.Handle(ccdclientaddress.AddOrUpdate))
 	http.HandleFunc("/api/ccdClientAddress/del", filter.Handle(ccdclientaddress.Del))
 	http.HandleFunc("/api/ccdClientAddress/query", filter.Handle(ccdclientaddress.Query))
 	http.HandleFunc("/api/ccdClientAddress/queryByAccountId", filter.Handle(ccdclientaddress.QueryByAccountId))
@@ -813,6 +865,11 @@ func (oAdmin *OvpnAdmin) usersList() []OpenvpnClient {
 	expiredCerts := 0
 	connectedUsers := 0
 	apochNow := time.Now().Unix()
+	dbexitusers := user.ListUserRoles()
+	usermap := make(map[string]user.UserRole)
+	for _, data := range dbexitusers {
+		usermap[data.Name] = data
+	}
 
 	for _, line := range indexTxtParser(fRead(*indexTxtPath)) {
 		if line.Identity != "server" {
@@ -843,6 +900,16 @@ func (oAdmin *OvpnAdmin) usersList() []OpenvpnClient {
 				connectedUsers += 1
 			}
 
+			dbuser := usermap[line.Identity]
+			if dbuser.Id != 0 {
+				ovpnClient.Id = dbuser.Id
+				if dbuser.RoleId != nil {
+					ovpnClient.RoleId = *dbuser.RoleId
+				}
+				if dbuser.RoleName != nil {
+					ovpnClient.RoleName = *dbuser.RoleName
+				}
+			}
 			users = append(users, ovpnClient)
 
 		} else {

@@ -29,15 +29,15 @@ func createAccountRole(accountRole *AccountRole) (err error) {
 	return err
 }
 
-func deleteAccountRole(id int) (err error) {
-	var deleteQuery = "DELETE FROM account_role WHERE id = $1"
-	res, err := db.GetDb().Exec(deleteQuery, id)
+func deleteAccountRole(accountId int) (err error) {
+	var deleteQuery = "DELETE FROM account_role WHERE account_id = $1"
+	res, err := db.GetDb().Exec(deleteQuery, accountId)
 	db.CheckErr(err)
 	if rowsAffected, rowsErr := res.RowsAffected(); rowsErr != nil {
-		return fmt.Errorf("ERROR: due deleting account_role %d: %s\n", id, rowsErr)
+		return fmt.Errorf("ERROR: due deleting account_role %d: %s\n", accountId, rowsErr)
 	} else {
 		if rowsAffected == 1 {
-			fmt.Printf("account_role id %s deleted\n", id)
+			fmt.Printf("account_role account_id id %s deleted\n", accountId)
 		}
 	}
 	return err
@@ -104,13 +104,13 @@ func Add(w http.ResponseWriter, req *http.Request) {
 
 func Del(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	accountRoleIdStr := req.Form.Get("accountRoleId")
-	if len(accountRoleIdStr) == 0 {
+	accountIdStr := req.Form.Get("accountId")
+	if len(accountIdStr) == 0 {
 		commonresp.JsonRespFail(w, "roleId is not empty")
 		return
 	}
-	accountRoleId, _ := strconv.Atoi(accountRoleIdStr)
-	err := deleteAccountRole(accountRoleId)
+	accountId, _ := strconv.Atoi(accountIdStr)
+	err := deleteAccountRole(accountId)
 	commonresp.JudgeError(w, "del ccdRoute", err)
 }
 
@@ -118,7 +118,7 @@ func QueryByAccountId(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	accountIdStr := req.Form.Get("accountId")
 	if len(accountIdStr) == 0 {
-		commonresp.JsonRespFail(w, "roleId is not empty")
+		commonresp.JsonRespFail(w, "accountId is not empty")
 		return
 	}
 	accountId, _ := strconv.Atoi(accountIdStr)
