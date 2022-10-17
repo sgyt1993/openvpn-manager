@@ -47,6 +47,10 @@ docker run -t -i openvpn:v1 /bin/bash
 docker-compose up
 ```
 
+### 用户名密码初始化
+打开 http://127.0.0.1:8080
+admin/123456
+
 ### 结束
 ```shell
 docker-compose down
