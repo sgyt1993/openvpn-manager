@@ -27,14 +27,13 @@ An example of dashboard made using ovpn-admin metrics:
 ## 本地启动说明
 ### 生成前端 js
 ```shell
-cd frontend 
+cd h5/openvpn-ui
 npm install
-npm run build
 ```
 ### 运行go项目增加环境变了
 ```shell
 本地启动需要的参数
-OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;OVPN_AUTH_DB_PATH=./easyrsa_master/pki/openvpn.db;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
+OVPN_INDEX_PATH=./easyrsa_master/pki/index.txt;OVPN_CCD=True;OVPN_CCD_PATH=./ccd_master;OVPN_AUTH=true;EASYRSA_PATH=./easyrsa_master;DB_PATH=./easyrsa_master/openvpn.db
 ```
 
 ###编译 Dockerfile.openvpn 命令
@@ -53,4 +52,5 @@ docker-compose up
 docker-compose down
 ```
 
-
+### 借鉴工程
+感谢

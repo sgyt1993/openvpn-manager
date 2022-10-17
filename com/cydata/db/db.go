@@ -84,6 +84,7 @@ func GetDb() *sql.DB {
 
 func CheckErr(err error) {
 	if err != nil {
+
 		panic(err)
 	}
 }

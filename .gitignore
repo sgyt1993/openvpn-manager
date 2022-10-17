@@ -5,10 +5,8 @@ ccd
 ccd_master
 ccd_slave
 openvpn-web-ui*
-openvpn-ui*
 openvpn-admin*
 ovpn-admin*
-frontend/node_modules
 
 main-packr.go
 packrd/
@@ -19,3 +17,4 @@ packrd/
 *.ntvs*
 *.njsproj
 *.sln
+

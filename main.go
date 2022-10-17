@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"container/list"
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,10 +32,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	_ "embed"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -156,7 +157,14 @@ var (
 		[]string{"client"},
 	)
 
-	templates *packr.Box
+	//go:embed templates/ccd.tpl
+	ccdTemp string
+
+	//go:embed templates/client.conf.tpl
+	ccdConfTemp string
+
+	//go:embed h5/dist
+	h5stat embed.FS
 )
 
 type OvpnAdmin struct {
@@ -509,15 +517,12 @@ func main() {
 	//初始化数据
 	db.InitDb()
 
-	templates = packr.New("template", "./templates")
-
-	staticBox := packr.New("static", "./frontend/static")
-	static := CacheControlWrapper(http.FileServer(staticBox))
+	static := CacheControlWrapper(http.FileServer(http.FS(h5stat)))
+	http.Handle("/", static)
 
 	filter := filter.New()
 	filter.RegisterFilterUri("/api/**", login.JudgeLogin)
 
-	http.Handle("/", static)
 	http.HandleFunc("/sys/login", login.AccountLogin)
 	http.HandleFunc("/api/users/list", filter.Handle(ovpnAdmin.userListHandler))
 	http.HandleFunc("/api/user/create", filter.Handle(ovpnAdmin.userCreateHandler))
@@ -647,8 +652,8 @@ func (oAdmin *OvpnAdmin) getClientConfigTemplate() *template.Template {
 	if *clientConfigTemplatePath != "" {
 		return template.Must(template.ParseFiles(*clientConfigTemplatePath))
 	} else {
-		clientConfigTpl, clientConfigTplErr := templates.FindString("client.conf.tpl")
-		if clientConfigTplErr != nil {
+		clientConfigTpl := ccdConfTemp
+		if len(ccdConfTemp) == 0 {
 			log.Println("ERROR: clientConfigTpl not found in templates box")
 		}
 		return template.Must(template.New("client-config").Parse(clientConfigTpl))
@@ -704,8 +709,8 @@ func GetCcdTemplate() *template.Template {
 	if *ccdTemplatePath != "" {
 		return template.Must(template.ParseFiles(*ccdTemplatePath))
 	} else {
-		ccdTpl, ccdTplErr := templates.FindString("ccd.tpl")
-		if ccdTplErr != nil {
+		ccdTpl := ccdTemp
+		if len(ccdTemp) == 0 {
 			log.Printf("ERROR: ccdTpl not found in templates box")
 		}
 		return template.Must(template.New("ccd").Parse(ccdTpl))

@@ -18,7 +18,7 @@ services:
     volumes:
       - ./easyrsa_master:/etc/openvpn/easyrsa
       - ./ccd_master:/etc/openvpn/ccd
-  ovpn-admin:
+  openvpn-management:
     build:
       context: .
     image: ovpn-admin:local
@@ -30,10 +30,10 @@ services:
       EASYRSA_PATH: "/mnt/easyrsa"
       OVPN_SERVER: "127.0.0.1:7777:tcp"
       OVPN_INDEX_PATH: "/mnt/easyrsa/pki/index.txt"
-      OVPN_CCD: "True"
+      OVPN_CCD: "true"
       OVPN_CCD_PATH: "/mnt/ccd"
       OVPN_AUTH: "true"
-      OVPN_AUTH_DB_PATH: "/mnt/easyrsa/pki/openvpn.db"
+      DB_PATH: "/mnt/easyrsa/pki/openvpn.db"
     network_mode: service:openvpn
     volumes:
       - ./easyrsa_master:/mnt/easyrsa
