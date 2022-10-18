@@ -51,6 +51,31 @@ docker-compose up
 打开 http://127.0.0.1:8080
 admin/123456
 
+### docker-compose 参数说明
+<table>
+	<tr>
+		<th>参数</th>
+		<th>说明</th>
+	</tr>
+	<tr>
+		<td>DB_PATH</td>
+		<td>sqlite的存储地址</td>
+	</tr>
+	<tr>
+		<td>OVPN_DEBUG</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>OVPN_VERBOSE</td>
+		<th></th>
+	</tr>
+	<tr>
+		<td>OVPN_NETWORK</td>
+		<td></td>
+	</tr>
+</table>
+
+
 ### 结束
 ```shell
 docker-compose down
