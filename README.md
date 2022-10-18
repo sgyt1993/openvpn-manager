@@ -54,25 +54,29 @@ admin/123456
 ### docker-compose 参数说明
 <table>
 	<tr>
-		<th>参数</th>
-		<th>说明</th>
+		<th>parameter</th>
+		<th>remark</th>
 	</tr>
 	<tr>
 		<td>DB_PATH</td>
-		<td>sqlite的存储地址</td>
+		<td>sqlite db address</td>
 	</tr>
 	<tr>
 		<td>OVPN_DEBUG</td>
-		<td></td>
+		<td>log is dubug</td>
 	</tr>
 	<tr>
 		<td>OVPN_VERBOSE</td>
-		<th></th>
+		<th>log show verbose</th>
 	</tr>
 	<tr>
 		<td>OVPN_NETWORK</td>
-		<td></td>
+		<td>openvpn start network</td>
 	</tr>
+    <tr>
+        <td>OVPN_SERVER</td>
+        <td>openvpn client address</td>
+    </tr>
 </table>
 
 
