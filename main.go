@@ -8,6 +8,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -516,8 +517,12 @@ func main() {
 
 	//初始化数据
 	db.InitDb()
-
-	static := CacheControlWrapper(http.FileServer(http.FS(h5stat)))
+	newfs, err := fs.Sub(h5stat, "h5/dist")
+	if err != nil {
+		log.Println("h5 is not exit")
+		panic(err)
+	}
+	static := CacheControlWrapper(http.FileServer(http.FS(newfs)))
 	http.Handle("/", static)
 
 	filter := filter.New()

@@ -1,5 +1,6 @@
 FROM golang:1.16.0-buster AS backend-builder
 COPY . /app
+RUN go env -w GOPROXY=https://goproxy.cn
 RUN cd /app && env CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-linkmode external -extldflags -static -s -w' -o ovpn-admin
 
 FROM alpine:3.14
