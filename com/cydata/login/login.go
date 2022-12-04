@@ -3,6 +3,7 @@ package login
 import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
 	"net/http"
 	"ovpn-admin/com/cydata/commonresp"
@@ -28,29 +29,29 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func AccountLogin(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	userName := req.Form.Get("userName")
-	password := req.Form.Get("password")
+// @Summary 登录接口
+// @title 登录接口
+// @Tags 登录接口
+// @Router /sys/login [POST]
+// @param roleId query int true "角色id"
+// @Success 200 {object} commonresp.JsonResult
+func AccountLogin(c *gin.Context) {
+	userName := c.PostForm("userName")
+	password := c.PostForm("password")
 	if strings.Compare(userName, sysAccountName) != 0 || strings.Compare(password, sysPassword) != 0 {
-		commonresp.JsonRespFail(w, "password or account error")
+		c.JSON(http.StatusOK, commonresp.Failed("password or account error"))
 		return
 	}
 	toke, _ := CreateToken(userName)
 	expiration := time.Now()
 	expiration = expiration.AddDate(0, 0, 1)
-	cookie := http.Cookie{
-		Name:    "token",
-		Value:   toke,
-		Expires: expiration,
-		Path:    "/",
-	}
-	http.SetCookie(w, &cookie)
+
+	c.SetCookie("token", toke, 0, "/", "", false, true)
 
 	//跳转主页
-	w.Header().Set("Cache-Control", "must-revalidate, no-store")
-	w.Header().Set("Content-Type", " text/html;charset=UTF-8")
-	commonresp.JsonRespOK(w, toke)
+	c.Header("Cache-Control", "must-revalidate, no-store")
+	c.Header("Content-Type", " text/html;charset=UTF-8")
+	c.JSON(http.StatusOK, commonresp.OK(toke))
 }
 
 func JudgeLogin(rw http.ResponseWriter, req *http.Request) error {

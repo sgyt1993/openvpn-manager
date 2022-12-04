@@ -8,6 +8,9 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"io/fs"
 	"log"
 	"net"
@@ -37,7 +40,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "embed"
-	"gopkg.in/alecthomas/kingpin.v2"
+	gs "github.com/swaggo/gin-swagger"
+	_ "ovpn-admin/com/cydata/docs"
 )
 
 const (
@@ -523,12 +527,23 @@ func main() {
 		panic(err)
 	}
 	static := CacheControlWrapper(http.FileServer(http.FS(newfs)))
+
+	r := gin.Default()
+	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
 	http.Handle("/", static)
 
 	filter := filter.New()
 	filter.RegisterFilterUri("/api/**", login.JudgeLogin)
 
-	http.HandleFunc("/sys/login", login.AccountLogin)
+	r.GET("/sys/login", login.AccountLogin)
+
+	//拦截器
+	r.Use(func(ctx *gin.Context) {
+		filter.Handle(ctx)
+		//通用日志打点
+	})
+
+	//http.HandleFunc("/sys/login", login.AccountLogin)
 	http.HandleFunc("/api/users/list", filter.Handle(ovpnAdmin.userListHandler))
 	http.HandleFunc("/api/user/create", filter.Handle(ovpnAdmin.userCreateHandler))
 	http.HandleFunc("/api/user/change-password", filter.Handle(ovpnAdmin.userChangePasswordHandler))
@@ -541,10 +556,10 @@ func main() {
 	http.HandleFunc("/api/user/userCcdApply", filter.Handle(UserCcdApply))
 	http.HandleFunc("/api/user/role/apply", filter.Handle(RoleApplyCcdRoleHandler))
 
-	http.HandleFunc("/api/role/add", filter.Handle(role.Add))
-	http.HandleFunc("/api/role/update", filter.Handle(role.Update))
-	http.HandleFunc("/api/role/del", filter.Handle(role.Del))
-	http.HandleFunc("/api/role/query", filter.Handle(role.Query))
+	r.GET("/api/role/query", role.Query)
+	r.GET("/api/role/del", role.Del)
+	r.POST("/api/role/update", role.Update)
+	r.POST("/api/role/add", role.Add)
 
 	http.HandleFunc("/api/accountRole/add", filter.Handle(accountrole.Add))
 	http.HandleFunc("/api/accountRole/del", filter.Handle(accountrole.Del))
@@ -577,6 +592,7 @@ func main() {
 
 	log.Printf("Bind: http://%s:%s\n", *listenHost, *listenPort)
 	log.Fatal(http.ListenAndServe(*listenHost+":"+*listenPort, nil))
+	r.Run()
 }
 
 func CacheControlWrapper(h http.Handler) http.Handler {

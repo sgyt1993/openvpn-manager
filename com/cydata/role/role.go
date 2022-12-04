@@ -2,6 +2,7 @@ package role
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"ovpn-admin/com/cydata/ccdroute"
 	"ovpn-admin/com/cydata/commonresp"
@@ -15,11 +16,6 @@ type Role struct {
 	CcdRoutes []ccdroute.CcdRoute `json:"ccdRoutes"`
 }
 
-// @title    函数名称
-// @description   函数的详细描述
-// @auth      作者             时间（2019/6/18   10:57 ）
-// @param     roleName        string         "角色名称"
-// @return    返回参数名        bool           "是否正确"
 func checkRoleExistent(roleName string) bool {
 	// we need to check if there is already such a user
 	// return true if user exist
@@ -95,47 +91,83 @@ func queryRoleAll() (roles []Role, err error) {
 	return roles, err
 }
 
-func Add(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	roleName := req.Form.Get("roleName")
-	if len(roleName) == 0 {
-		commonresp.JsonRespFail(w, "roleName is not empty")
+// @Summary 角色接口
+// @title 角色删除
+// @Tags 角色删除
+// @param roleName query string true "角色名称"
+// @Accept application/x-www-form-urlencoded
+// @Produce application/x-www-form-urlencoded
+// @Router /api/role/add [post]
+// @Success 200 {object} commonresp.JsonResult
+func Add(c *gin.Context) {
+	roleName, flag := c.GetQuery("roleName")
+	if flag {
+		c.JSON(http.StatusOK, commonresp.Failed("roleName is not empty"))
 		return
 	}
-
 	err := createRole(roleName)
-	commonresp.JudgeError(w, "create role", err)
+	commonresp.JudgeError(c, "create role", err)
 }
 
-func Del(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	roleIdStr := req.Form.Get("roleId")
-	if len(roleIdStr) == 0 {
-		commonresp.JsonRespFail(w, "roleId is not empty")
+// @Summary 角色接口
+// @title 角色删除
+// @Tags 角色删除
+// @param roleId query int true "角色id"
+// @Accept application/x-www-form-urlencoded
+// @Produce application/x-www-form-urlencoded
+// @Router /api/role/del [get]
+// @Success 200 {object} commonresp.JsonResult
+func Del(c *gin.Context) {
+	roleIdStr, flag := c.GetQuery("roleId")
+	if flag {
+		c.JSON(http.StatusOK, commonresp.Failed("roleId is not empty"))
 		return
 	}
 	roleId, _ := strconv.Atoi(roleIdStr)
 	err := deleteRole(roleId)
-	commonresp.JudgeError(w, "del role", err)
+	commonresp.JudgeError(c, "del role", err)
 }
 
-func Update(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	idStr := req.Form.Get("id")
+// @Summary 角色接口
+// @title 角色跟新
+// @Tags 角色跟新
+// @Accept application/json
+// @Produce application/json
+// @Router /api/role/update [post]
+// @param id query int true "角色id"
+// @param roleName query string true "角色名称"
+// @Success 200 {object} commonresp.JsonResult
+func Update(c *gin.Context) {
+	idStr, flag := c.GetPostForm("id")
+	if flag {
+		c.JSON(http.StatusOK, commonresp.Failed("id is not empty"))
+		return
+	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		commonresp.JsonRespFail(w, "参数类型错误")
+		c.JSON(http.StatusOK, commonresp.Failed("参数类型错误"))
 		return
 	}
 
-	roleName := req.Form.Get("roleName")
+	roleName, flag := c.GetPostForm("roleName")
+	if flag {
+		c.JSON(http.StatusOK, commonresp.Failed("roleName is not empty"))
+		return
+	}
 	role := Role{Id: id, RoleName: roleName}
 
 	err = updateRole(&role)
-	commonresp.JudgeError(w, "update role", err)
+	commonresp.JudgeError(c, "update role", err)
 }
 
-func Query(w http.ResponseWriter, req *http.Request) {
+// @Summary 角色接口
+// @title 角色查询
+// @Tags 角色查询
+// @Accept application/json
+// @Produce application/json
+// @Router /api/role/query [get]
+// @Success 200 {[]Role} commonresp.JsonResult
+func Query(c *gin.Context) {
 	roles, err := queryRoleAll()
-	commonresp.JudgeError(w, roles, err)
+	commonresp.JudgeError(c, roles, err)
 }

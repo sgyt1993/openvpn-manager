@@ -157,6 +157,12 @@ func Del(w http.ResponseWriter, req *http.Request) {
 	commonresp.JudgeError(w, "del ccdRoute", err)
 }
 
+// @Summary 根据roleId查询角色详情
+// @title 后台接口
+// @Tags 根据roleId查询角色详情
+// @Router /api/roleCcd/queryByRoleId [get]
+// @param roleId query int true "角色id"
+// @Success 200 {object} commonresp.JsonResult
 func QueryByRoleId(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	roleRouteIdStr := req.Form.Get("roleId")

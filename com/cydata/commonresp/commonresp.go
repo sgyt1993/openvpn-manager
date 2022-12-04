@@ -2,9 +2,11 @@ package commonresp
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
+// JsonResult
 type JsonResult struct {
 	Code int         `json:"code"`
 	Msg  interface{} `json:"msg"`
@@ -64,14 +66,14 @@ func JsonRespFail(w http.ResponseWriter, msg string) {
 	w.Write(jsonResp)
 }
 
-func JudgeError(w http.ResponseWriter, data interface{}, err error) {
+func JudgeError(c *gin.Context, data interface{}, err error) {
 	if err != nil {
 		if len(err.Error()) == 0 {
-			JsonRespFail(w, "system is error")
+			c.JSON(http.StatusOK, Failed("system is error"))
 		} else {
-			JsonRespFail(w, err.Error())
+			c.JSON(http.StatusOK, Failed(err.Error()))
 		}
 	} else {
-		JsonRespOK(w, data)
+		c.JSON(http.StatusOK, OK(data))
 	}
 }
